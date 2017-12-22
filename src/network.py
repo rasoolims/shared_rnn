@@ -146,7 +146,7 @@ class Network:
     def norms(self, v):
         norms = []
         for i in range(v.dim()[0][0]):
-            norms.append(squared_norm(v))
+            norms.append(squared_norm(v[i]))
         return concatenate_cols(norms)
 
     def train(self, mini_batch):
