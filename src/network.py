@@ -147,7 +147,7 @@ class Network:
         norms = []
         for i in range(v.dim()[0][0]):
             norms.append(squared_norm(v[i]))
-        return concatenate_cols(norms)
+        return concatenate(norms)
 
     def train(self, mini_batch):
         words, pos_tags, chars, langs, signs, masks = mini_batch
