@@ -143,9 +143,9 @@ class Network:
         return self.bi_rnn(lstm_input, lstm_input[0].dim()[1], d if train else 0, d if train else 0)
 
 
-    def train(self, mini_batch, t=1, train=True):
+    def train(self, mini_batch):
         words, pos_tags, chars, langs, signs, masks = mini_batch
-        h_out = self.rnn_mlp(mini_batch, train)[-1]
+        h_out = self.rnn_mlp(mini_batch, True)[-1]
         t_out = transpose(reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1])))
 
         k = float(t_out.dim()[0][0] - len(chars))

@@ -38,14 +38,20 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
     universal_tags = ['ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM', 'PART', 'PRON', 'PROPN', 'PUNCT', 'SCONJ', 'SYM', 'VERB', 'X']
     network = Network(universal_tags, options)
+    print 'loading train batches'
     train_batches = get_batches(options.train_data, network)
+    print 'loading dev batches'
     dev_batches = get_batches(options.dev_data, network)
+    print 'starting epochs'
     for e in range(10):
+        print 'epochs', (e+1)
         random.shuffle(train_batches)
         errors = []
+        progress = 0
         for i in range(len(train_batches)):
-            errors.append(network.train(train_batches[i], 1, True))
+            errors.append(network.train(train_batches[i]))
+            progress += 1
             if len(errors) >= 10:
-                print sum(errors)/len(errors)
+                print 'progress', round(float(100*progress)/len(train_batches), 2), '%, loss', sum(errors)/len(errors)
                 errors = []
         print 'dev sim', sum([network.eval(b) for b in dev_batches])/len(dev_batches)
