@@ -143,10 +143,17 @@ class Network:
         return self.bi_rnn(lstm_input, lstm_input[0].dim()[1], d if train else 0, d if train else 0)
 
 
+    def norms(self, v):
+        norms = []
+        for i in range(v.dim()[0][0]):
+            norms.append(squared_norm(v))
+        return concatenate_cols(norms)
+
     def train(self, mini_batch):
         words, pos_tags, chars, langs, signs, masks = mini_batch
         h_out = self.rnn_mlp(mini_batch, True)[-1]
         t_out = transpose(reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1])))
+        norm_vals = self.norms(t_out).value()
 
         k = float(t_out.dim()[0][0] - len(chars))
         kq = scalarInput(k/self.num_all_words)
@@ -155,7 +162,7 @@ class Network:
         for i in range(len(langs)):
             for j in range(i+1, len(langs)):
                 if (langs[i] != langs[j]) and (signs[i] == 1 or signs[j]==1):
-                    lu = dot_product(t_out[i], t_out[j])
+                    lu = dot_product(t_out[i], t_out[j]) / (norm_vals[i]*norm_vals[j])
                     ls = -log(exp(lu) + kq)
                     if signs[i] == signs[j]: # both one
                         ls += lu
@@ -175,11 +182,11 @@ class Network:
         h_out = self.rnn_mlp(mini_batch, False)[-1]
         t_out = transpose(reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1])))
 
-
         sims = []
+        norm_vals = self.norms(t_out).value()
         for i in range(len(langs)):
             for j in range(i+1, len(langs)):
-                sims.append(dot_product(t_out[i], t_out[j]))
+                sims.append(dot_product(t_out[i], t_out[j])/(norm_vals[i]*norm_vals[j]))
         sim = esum(sims)
         sim.forward()
         sim_value = sim.value() / len(sims)
