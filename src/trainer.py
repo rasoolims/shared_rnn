@@ -51,7 +51,7 @@ if __name__ == '__main__':
         for i in range(len(train_batches)):
             errors.append(network.train(train_batches[i]))
             progress += 1
-            if len(errors) >= 10:
+            if len(errors) >= 100:
                 print 'progress', round(float(100*progress)/len(train_batches), 2), '%, loss', sum(errors)/len(errors)
                 errors = []
         print 'dev sim', sum([network.eval(b) for b in dev_batches])/len(dev_batches)
