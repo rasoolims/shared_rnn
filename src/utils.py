@@ -47,6 +47,7 @@ def get_batches(file_path, model, is_dev = False):
         if len(mini_batches)%1000==0:
             sys.stdout.write(str(len(mini_batches))+'...')
         #if len(mini_batches)>=100: break #todo
+        line = reader.readline()
     sys.stdout.write(str(len(mini_batches)) + '\n')
     return mini_batches
 

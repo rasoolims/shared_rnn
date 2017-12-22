@@ -41,7 +41,7 @@ if __name__ == '__main__':
     print 'loading train batches'
     train_batches = get_batches(options.train_data, network)
     print 'loading dev batches'
-    dev_batches = get_batches(options.dev_data, network)
+    dev_batches = get_batches(options.dev_data, network, True)
     print 'starting epochs'
     for e in range(10):
         print 'epochs', (e+1)
