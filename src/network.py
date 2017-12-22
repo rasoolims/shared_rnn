@@ -169,9 +169,9 @@ class Network:
                     else:
                         ls += lkq
                     loss_values.append(-ls)
-        err = esum(loss_values)/ len(loss_values)
+        err = esum(loss_values)
         err.forward()
-        err_value = err.value()
+        err_value = err.value() / len(loss_values)
         err.backward()
         self.trainer.update()
         renew_cg()
