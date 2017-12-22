@@ -44,7 +44,7 @@ def get_batches(file_path, model, is_dev = False):
                 c_len[lang_id] = max(c_len[lang_id], max([len(w) for w in words]))
                 batch[lang_id].append((words, tags, lang_id, 0))
         add_to_minibatch(batch, c_len, w_len, mini_batches, model)
-        if len(mini_batches)%100==0:
+        if len(mini_batches)%1000==0:
             sys.stdout.write(str(len(mini_batches))+'...')
         #if len(mini_batches)>=100: break #todo
     sys.stdout.write(str(len(mini_batches)) + '\n')
