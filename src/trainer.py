@@ -34,7 +34,7 @@ if __name__ == '__main__':
     parser.add_option("--stop", type="int", dest="stop", default=50)
     parser.add_option("--dynet-mem", type="int", dest="mem", default=512)
     parser.add_option("--dynet-autobatch", type="int", dest="dynet-autobatch", default=0)
-    parser.add_option("--dynet-l2", type="float", dest="dynet-l2", default=1e-6)
+    parser.add_option("--dynet-l2", type="float", dest="dynet-l2", default=0)
 
     (options, args) = parser.parse_args()
     universal_tags = ['ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM', 'PART', 'PRON', 'PROPN', 'PUNCT', 'SCONJ', 'SYM', 'VERB', 'X']
