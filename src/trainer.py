@@ -37,22 +37,29 @@ if __name__ == '__main__':
     parser.add_option("--dynet-l2", type="float", dest="dynet-l2", default=0)
 
     (options, args) = parser.parse_args()
+    chars = read_chars(options.train_data)
     universal_tags = ['ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM', 'PART', 'PRON', 'PROPN', 'PUNCT', 'SCONJ', 'SYM', 'VERB', 'X']
-    network = Network(universal_tags, options)
+    network = Network(universal_tags, chars, options)
     print 'loading train batches'
-    train_batches = get_batches(options.train_data, network)
+    num_train_batches = get_batches(options.train_data, network, options.output+'.train.')
     print 'loading dev batches'
-    dev_batches = get_batches(options.dev_data, network, True)
+    num_dev_batches = get_batches(options.dev_data, network, options.output+'.dev.', True)
     print 'starting epochs'
     for e in range(10):
         print 'epochs', (e+1)
-        random.shuffle(train_batches)
         errors = []
         progress = 0
-        for i in range(len(train_batches)):
-            errors.append(network.train(train_batches[i]))
+        for i in range(num_train_batches):
+            r = random.randint(0, num_train_batches-1)
+            train_minibatch = pickle.load(open(options.output+'.train.'+str(r), 'r'))
+            errors.append(network.train(train_minibatch))
             progress += 1
             if len(errors) >= 100:
-                print 'progress', round(float(100*progress)/len(train_batches), 2), '%, loss', sum(errors)/len(errors)
+                print 'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
                 errors = []
-        print 'dev sim', sum([network.eval(b) for b in dev_batches])/len(dev_batches)
+        dev_perf = 0.0
+        for i in range(num_dev_batches):
+            dev_minibatch = pickle.load(open(options.output + '.dev.' + str(i), 'r'))
+            dev_perf += network.eval(dev_minibatch)
+        dev_perf /= num_dev_batches
+        print 'dev sim', dev_perf

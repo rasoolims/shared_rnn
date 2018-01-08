@@ -6,7 +6,7 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 
 class Network:
-    def __init__(self, pos, options):
+    def __init__(self, pos, chars, options):
         self.model = dy.Model()
         self.UNK = 0
         self.PAD = 1
@@ -38,16 +38,10 @@ class Network:
 
             if len(external_embedding[lang]) > 0:
                 edim = len(external_embedding[lang].values()[0])
-            ch = set()
-            for word in external_embedding[lang].keys():
-                for c in word:
-                    ch.add(c.lower())
-            ch = list(sorted(ch))
-            self.chars[lang] = {c: i + 2 for i, c in enumerate(ch)}
-
+            self.chars[lang] = {c: i + 2 for i, c in enumerate(chars)}
 
             print 'Loaded vector', edim, 'and', len(external_embedding[lang]), 'for', lang
-            self.clookup[lang] = self.model.add_lookup_parameters((len(ch) + 2, options.ce))
+            self.clookup[lang] = self.model.add_lookup_parameters((len(chars) + 2, options.ce))
             self.char_lstm[lang] = dy.BiRNNBuilder(1, options.ce, edim, self.model, dy.VanillaLSTMBuilder)
             self.proj_mat[lang] = self.model.add_parameters((edim + options.pe, edim + options.pe))
 

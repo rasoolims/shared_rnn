@@ -1,4 +1,4 @@
-import re, codecs,sys, random, gzip
+import re, codecs,sys, random, gzip, pickle
 import numpy as np
 from collections import defaultdict
 reload(sys)
@@ -8,19 +8,33 @@ numberRegex = re.compile("[0-9]+|[0-9]+\\.[0-9]+|[0-9]+[0-9,]+");
 def normalize(word):
     return 'NUM' if numberRegex.match(word) else word.lower()
 
-def get_batches(file_path, model, is_dev = False):
-    mini_batches = []
+
+def read_chars(file_path):
+    chars = defaultdict(set)
+    for line in gzip.open(file_path, 'r'):
+        spl = line.strip().split('\t')
+        for i in range(0, len(spl), 2):
+            lang_id = spl[i].strip()
+            for sen_t in spl[i + 1].strip().split():
+                for char in sen_t[:sen_t.rfind('_')]:
+                    chars[lang_id].add(char)
+
+    ordered_chars = defaultdict(list)
+    for l in chars.keys():
+        ordered_chars[l] = sorted(list(chars[l]))
+    return ordered_chars
+
+
+def get_batches(file_path, model, batch_file_name, is_dev = False):
+    mini_batch_num = 0
     reader = gzip.open(file_path, 'r')
     line = reader.readline()
-    # lang_set = {'de', 'en', 'es', 'fr'}
     while line:
         spl = line.strip().split('\t')
         batch = defaultdict(list)
         c_len, w_len = defaultdict(int), 0
         for i in range(0, len(spl), 2):
             lang_id = spl[i].strip()
-            # if not lang_id in lang_set:
-            #     continue
             words, tags = [], []
             for sen_t in spl[i+1].strip().split():
                 r = sen_t.rfind('_')
@@ -34,8 +48,6 @@ def get_batches(file_path, model, is_dev = False):
             spl = line.strip().split('\t')
             for i in range(0, len(spl), 2):
                 lang_id = spl[i].strip()
-                # if not lang_id in lang_set:
-                #     continue
                 words, tags = [], []
                 for sen_t in spl[i+1].strip().split():
                     r = sen_t.rfind('_')
@@ -43,17 +55,16 @@ def get_batches(file_path, model, is_dev = False):
                     tags.append(sen_t[r+1:])
                 c_len[lang_id] = max(c_len[lang_id], max([len(w) for w in words]))
                 batch[lang_id].append((words, tags, lang_id, 0))
-        add_to_minibatch(batch, c_len, w_len, mini_batches, model)
-        if len(mini_batches)%1000==0:
-            sys.stdout.write(str(len(mini_batches))+'...')
-        #if len(mini_batches)>=100: break #todo
+        pfp = open(batch_file_name+str(mini_batch_num), 'w')
+        pickle.dump(get_minibatch(batch, c_len, w_len, model), pfp)
+        mini_batch_num += 1
+        if mini_batch_num%1000==0:
+            sys.stdout.write(str(mini_batch_num)+'...')
         line = reader.readline()
-    sys.stdout.write(str(len(mini_batches)) + '\n')
-    return mini_batches
 
+    return mini_batch_num
 
-
-def add_to_minibatch(batch, cur_c_len, cur_len, mini_batches, model):
+def get_minibatch(batch, cur_c_len, cur_len, model):
     all_batches = []
     for lang_id in batch.keys():
         all_batches +=  batch[lang_id]
@@ -75,7 +86,8 @@ def add_to_minibatch(batch, cur_c_len, cur_len, mini_batches, model):
              range(len(batch[lang_id]))]) for j in range(cur_len)])
     masks = np.array([np.array([1 if 0 < j < len(all_batches[i][0]) else 0 for i in range(len(all_batches))])
                       for j in range(cur_len)])
-    mini_batches.append((pwords, pos, chars, langs, signs, masks))
+    mini_batch = (pwords, pos, chars, langs, signs, masks)
+    return mini_batch
 
 
 def is_punc(pos):
