@@ -12,15 +12,15 @@ def get_batches(file_path, model, is_dev = False):
     mini_batches = []
     reader = gzip.open(file_path, 'r')
     line = reader.readline()
-    lang_set = {'de', 'en', 'es', 'fr'}
+    # lang_set = {'de', 'en', 'es', 'fr'}
     while line:
         spl = line.strip().split('\t')
         batch = defaultdict(list)
         c_len, w_len = defaultdict(int), 0
         for i in range(0, len(spl), 2):
             lang_id = spl[i].strip()
-            if not lang_id in lang_set:
-                continue
+            # if not lang_id in lang_set:
+            #     continue
             words, tags = [], []
             for sen_t in spl[i+1].strip().split():
                 r = sen_t.rfind('_')
@@ -34,8 +34,8 @@ def get_batches(file_path, model, is_dev = False):
             spl = line.strip().split('\t')
             for i in range(0, len(spl), 2):
                 lang_id = spl[i].strip()
-                if not lang_id in lang_set:
-                    continue
+                # if not lang_id in lang_set:
+                #     continue
                 words, tags = [], []
                 for sen_t in spl[i+1].strip().split():
                     r = sen_t.rfind('_')
