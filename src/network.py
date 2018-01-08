@@ -17,7 +17,7 @@ class Network:
         self.plookup = self.model.add_lookup_parameters((len(pos) + 2, options.pe))
         edim = options.we
 
-        lang_set = {'de', 'en', 'es', 'fr'}
+        # lang_set = {'de', 'en', 'es', 'fr'}
         self.chars = dict()
         self.evocab = dict()
         self.clookup = dict()
@@ -27,8 +27,8 @@ class Network:
         word_index = 2
         for f in os.listdir(options.external_embedding):
             lang = f[:-3]
-            if not lang in lang_set:
-                continue
+            # if not lang in lang_set:
+            #     continue
             efp = gzip.open(options.external_embedding+'/'+f, 'r')
             external_embedding[lang] = {line.split(' ')[0]: [float(f) for f in line.strip().split(' ')[1:]]
                                         for line in efp if len(line.split(' ')) > 2}
