@@ -53,14 +53,17 @@ if __name__ == '__main__':
         for i in range(num_train_batches):
             r = random.randint(0, num_train_batches-1)
             train_minibatch = pickle.load(open(options.output+'/train.'+str(r), 'r'))
-            errors.append(network.train(train_minibatch))
+            random.shuffle(train_minibatch)
+            for mini_batch in train_minibatch:
+                errors.append(network.train(mini_batch))
             progress += 1
             if len(errors) >= 100:
                 print 'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
                 errors = []
-        dev_perf = 0.0
+        dev_perf, num_item  = 0.0, 0
         for i in range(num_dev_batches):
             dev_minibatch = pickle.load(open(options.output + '.dev.' + str(i), 'r'))
-            dev_perf += network.eval(dev_minibatch)
-        dev_perf /= num_dev_batches
+            dev_perf += sum([network.eval(b) for b in dev_minibatch])
+            num_item += dev_minibatch
+        dev_perf /= num_item
         print 'dev sim', dev_perf
