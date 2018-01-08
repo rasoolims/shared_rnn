@@ -65,8 +65,8 @@ def get_batches(file_path, model, batch_file_name, is_dev = False):
             pickle.dump(mini_batches, pfp)
             mini_batches = []
             mini_batch_num += 1
-        if mini_batch_num%100==0:
-            sys.stdout.write(str(mini_batch_num)+'...')
+            if mini_batch_num%100==0:
+                sys.stdout.write(str(mini_batch_num)+'...')
         line = reader.readline()
 
     if len(mini_batches) > 0:
