@@ -11,14 +11,17 @@ def normalize(word):
 
 def read_chars(file_path):
     chars = defaultdict(set)
-    for line in gzip.open(file_path, 'r'):
+
+    for k, line in enumerate(gzip.open(file_path, 'r')):
         spl = line.strip().split('\t')
         for i in range(0, len(spl), 2):
             lang_id = spl[i].strip()
             for sen_t in spl[i + 1].strip().split():
                 for char in sen_t[:sen_t.rfind('_')]:
                     chars[lang_id].add(char)
-
+        if (k+1)%1000==0:
+            sys.stdout.write(str(k+1) + '...')
+    print (k+1)
     ordered_chars = defaultdict(list)
     for l in chars.keys():
         ordered_chars[l] = sorted(list(chars[l]))
@@ -62,6 +65,7 @@ def get_batches(file_path, model, batch_file_name, is_dev = False):
             sys.stdout.write(str(mini_batch_num)+'...')
         line = reader.readline()
 
+    print str(mini_batch_num)
     return mini_batch_num
 
 def get_minibatch(batch, cur_c_len, cur_len, model):

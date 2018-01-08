@@ -42,9 +42,9 @@ if __name__ == '__main__':
     universal_tags = ['ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM', 'PART', 'PRON', 'PROPN', 'PUNCT', 'SCONJ', 'SYM', 'VERB', 'X']
     network = Network(universal_tags, chars, options)
     print 'loading train batches'
-    num_train_batches = get_batches(options.train_data, network, options.output+'.train.')
+    num_train_batches = get_batches(options.train_data, network, options.output+'/train.')
     print 'loading dev batches'
-    num_dev_batches = get_batches(options.dev_data, network, options.output+'.dev.', True)
+    num_dev_batches = get_batches(options.dev_data, network, options.output+'/dev.', True)
     print 'starting epochs'
     for e in range(10):
         print 'epochs', (e+1)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         progress = 0
         for i in range(num_train_batches):
             r = random.randint(0, num_train_batches-1)
-            train_minibatch = pickle.load(open(options.output+'.train.'+str(r), 'r'))
+            train_minibatch = pickle.load(open(options.output+'/train.'+str(r), 'r'))
             errors.append(network.train(train_minibatch))
             progress += 1
             if len(errors) >= 100:
