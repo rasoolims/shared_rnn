@@ -37,6 +37,7 @@ if __name__ == '__main__':
     parser.add_option("--dynet-l2", type="float", dest="dynet-l2", default=0)
 
     (options, args) = parser.parse_args()
+    print 'loading chars'
     chars = read_chars(options.train_data)
     universal_tags = ['ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM', 'PART', 'PRON', 'PROPN', 'PUNCT', 'SCONJ', 'SYM', 'VERB', 'X']
     network = Network(universal_tags, chars, options)
