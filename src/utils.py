@@ -37,13 +37,14 @@ def split_data(file_path, output_path):
         line2 = reader.readline().strip()
         outputs.append(line)
         outputs.append(line2)
-        if len(outputs) >= 200:
+        if len(outputs) >= 20:
             writer = gzip.open(output_path + str(i), 'w')
             writer.write('\n'.join(outputs))
             writer.close()
             outputs = []
             i += 1
-            sys.stdout.write(str(i)+'...')
+            if i%1000 == 0:
+                sys.stdout.write(str(i)+'...')
         line = reader.readline()
 
     if len(outputs) > 0:
