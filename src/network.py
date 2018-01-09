@@ -143,17 +143,12 @@ class Network:
 
     def train(self, mini_batch):
         words, pos_tags, chars, langs, signs, masks = mini_batch
+
         # Getting the last hidden layer from BiLSTM.
         h_out = self.rnn_mlp(mini_batch, True)[-1]
         t_out_d = dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1]))
         t_out = dy.transpose(t_out_d)
 
-        # Getting the L2 norm values.
-        # norm_vals = dy.sqrt(dy.sum_cols(dy.cmult(t_out, t_out)))
-        # norm_prods = dy.reshape(norm_vals * dy.transpose(norm_vals), (len(langs)*len(langs),))
-
-        # Because division by expression is not implemented, we use the exp-log-minus to get inverted value.
-        # norm_prods_inv = dy.exp(-dy.log(norm_prods))
 
         # Calculating the kq values for NCE.
         k = float(t_out.dim()[0][0] - len(chars))
@@ -163,11 +158,8 @@ class Network:
         # Getting outer product (all possible permutations)
         products = dy.reshape(t_out * t_out_d, (len(langs)*len(langs),))
 
-        # Normalize products by their l2-norms.
-        normalized_products = products # dy.cmult(products, norm_prods_inv)
-
         # Getting u(x,\theta).
-        exp_prods = dy.exp(normalized_products)
+        exp_prods = dy.exp(products)
 
         # Masks for useless parts.
         final_mask = [0]*len(langs)*len(langs)
@@ -187,10 +179,10 @@ class Network:
 
         # NCE nominator and denominator.
         ls_vec = dy.log(exp_prods + kq)
-        other_vec =  dy.concatenate([normalized_products[i] if final_signs[i]==1 else lkq for i in range(len(final_signs))])
+        other_vec = dy.concatenate([products[i] if final_signs[i] == 1 else lkq for i in range(len(final_signs))])
 
         # NCE loss.
-        loss_vec = dy.cmult(-other_vec + ls_vec, final_mask)
+        loss_vec = dy.cmult(ls_vec-other_vec, final_mask)
 
         # Loss calculation.
         err = dy.sum_elems(loss_vec) / num_elems
