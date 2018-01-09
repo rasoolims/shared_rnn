@@ -143,6 +143,7 @@ class Network:
         words, pos_tags, chars, langs, signs, masks = mini_batch
         h_out = self.rnn_mlp(mini_batch, True)[-1]
         t_out = dy.transpose(dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1])))
+        print 'dims', t_out.dim(), len(langs)
         #norm_vals = self.norms(t_out).value()
 
         k = float(t_out.dim()[0][0] - len(chars))
