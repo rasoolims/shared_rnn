@@ -17,7 +17,7 @@ class Network:
         self.plookup = self.model.add_lookup_parameters((len(pos) + 2, options.pe))
         edim = options.we
 
-        # lang_set = {'de', 'en', 'es', 'fr'}
+        lang_set = {'de', 'en', 'es'}
         self.chars = dict()
         self.evocab = dict()
         self.clookup = dict()
@@ -27,6 +27,8 @@ class Network:
         word_index = 2
         for f in os.listdir(options.external_embedding):
             lang = f[:-3]
+            # if not lang in lang_set:
+            #     continue
             efp = gzip.open(options.external_embedding+'/'+f, 'r')
             external_embedding[lang] = {line.split(' ')[0]: [float(f) for f in line.strip().split(' ')[1:]]
                                         for line in efp if len(line.split(' ')) > 2}
@@ -141,31 +143,59 @@ class Network:
 
     def train(self, mini_batch):
         words, pos_tags, chars, langs, signs, masks = mini_batch
+        # Getting the last hidden layer from BiLSTM.
         h_out = self.rnn_mlp(mini_batch, True)[-1]
         t_out_d = dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1]))
         t_out = dy.transpose(t_out_d)
-        dots = t_out * t_out_d
-        print 'dims', t_out.dim(), len(langs), dots.dim()
-        #norm_vals = self.norms(t_out).value()
 
+        # Getting the L2 norm values.
+        norm_vals = dy.sqrt(dy.sum_cols(dy.cmult(t_out, t_out)))
+        norm_prods = dy.reshape(norm_vals * dy.transpose(norm_vals), (len(langs)*len(langs),))
+
+        # Because division by expression is not implemented, we use the exp-log-minus to get inverted value.
+        norm_prods_inv = dy.exp(-dy.log(norm_prods))
+
+        # Calculating the kq values for NCE.
         k = float(t_out.dim()[0][0] - len(chars))
-        kq = dy.scalarInput(k/self.num_all_words)
+        kq = dy.scalarInput(k / self.num_all_words)
         lkq = dy.log(kq)
-        loss_values = []
+
+        # Getting outer product (all possible permutations)
+        products = dy.reshape(t_out * t_out_d, (len(langs)*len(langs),))
+
+        # Normalize products by their l2-norms.
+        normalized_products = dy.cmult(products, norm_prods_inv)
+
+        # Getting u(x,\theta).
+        exp_prods = dy.exp(normalized_products)
+
+        # Masks for useless parts.
+        final_mask = [0]*len(langs)*len(langs)
+        final_signs = [0]*len(langs)*len(langs)
+        index, num_elems = 0, 0
         for i in range(len(langs)):
-            for j in range(i+1, len(langs)):
-                if (langs[i] != langs[j]) and (signs[i] == 1 or signs[j]==1):
-                    #lu = dot_product(t_out[i], t_out[j]) / (norm_vals[i]*norm_vals[j])
-                    lu = -dy.sqrt(dy.squared_distance(t_out[i], t_out[j]))
-                    ls = -dy.log(dy.exp(lu) + kq)
-                    if signs[i] == signs[j]: # both one
-                        ls += lu
+            for j in range(len(langs)):
+                if j>i and (langs[i] != langs[j]) and (signs[i] == 1 or signs[j]==1):
+                    final_mask[index] = 1
+                    num_elems += 1
+                    if signs[i] == signs[j]:
+                        final_signs[index] = 1
                     else:
-                        ls += lkq
-                    loss_values.append(-ls)
-        err = dy.esum(loss_values)
+                        final_signs[index] = -1
+                index += 1
+        final_mask = dy.inputVector(final_mask)
+
+        # NCE nominator and denominator.
+        ls_vec = dy.log(exp_prods + kq)
+        other_vec =  dy.concatenate([normalized_products[i] if final_signs[i]==1 else lkq for i in range(len(final_signs))])
+
+        # NCE loss.
+        loss_vec = dy.cmult(-other_vec + ls_vec, final_mask)
+
+        # Loss calculation.
+        err = dy.sum_elems(loss_vec) / num_elems
         err.forward()
-        err_value = err.value() / len(loss_values)
+        err_value = err.value()
         err.backward()
         self.trainer.update()
         dy.renew_cg()
@@ -177,7 +207,6 @@ class Network:
         t_out = dy.transpose(dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1])))
 
         sims = []
-        #norm_vals = self.norms(t_out).value()
         for i in range(len(langs)):
             for j in range(i+1, len(langs)):
                 sims.append(dy.squared_distance(t_out[i], t_out[j]))
