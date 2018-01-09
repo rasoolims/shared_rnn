@@ -62,8 +62,8 @@ if __name__ == '__main__':
                 errors = []
 
                 dev_perf, num_item  = 0.0, 0
-                for i in range(num_dev_batches):
-                    dev_minibatch = get_batches(options.output+'/dev.'+str(r), network)
+                for d in range(num_dev_batches):
+                    dev_minibatch = get_batches(options.output+'/dev.'+str(d), network)
                     dev_perf += sum([network.eval(b) for b in dev_minibatch])
                     num_item += dev_minibatch
                 dev_perf /= num_item
