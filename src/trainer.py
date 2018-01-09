@@ -1,7 +1,7 @@
 from optparse import OptionParser
 from network import Network
 from utils import *
-import pickle
+import pickle, time
 
 if __name__ == '__main__':
     parser = OptionParser()
@@ -51,13 +51,14 @@ if __name__ == '__main__':
         progress = 0
         for i in range(num_train_batches):
             r = random.randint(0, num_train_batches-1)
+            start = time.time()
             train_minibatch = get_batches(options.output+'/train.'+str(r), network)
             random.shuffle(train_minibatch)
             for mini_batch in train_minibatch:
                 errors.append(network.train(mini_batch))
             progress += 1
             if len(errors) >= 1:
-                print 'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
+                print 'time',float(time.time()-start)/1000,'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
                 errors = []
 
         dev_perf, num_item  = 0.0, 0
