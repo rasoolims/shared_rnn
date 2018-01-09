@@ -58,7 +58,7 @@ if __name__ == '__main__':
                 errors.append(network.train(mini_batch))
             progress += 1
             if len(errors) >= 1:
-                print 'time',float(time.time()-start)/1000,'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
+                print 'time',float(time.time()-start),'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
                 errors = []
 
         dev_perf, num_item  = 0.0, 0
