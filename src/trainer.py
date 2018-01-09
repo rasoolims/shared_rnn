@@ -56,7 +56,7 @@ if __name__ == '__main__':
             for mini_batch in train_minibatch:
                 errors.append(network.train(mini_batch))
             progress += 1
-            if len(errors) >= 100:
+            if len(errors) >= 1:
                 print 'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
                 errors = []
 
