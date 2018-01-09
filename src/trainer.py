@@ -41,10 +41,9 @@ if __name__ == '__main__':
     chars = read_chars(options.train_data)
     universal_tags = ['ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM', 'PART', 'PRON', 'PROPN', 'PUNCT', 'SCONJ', 'SYM', 'VERB', 'X']
     network = Network(universal_tags, chars, options)
-    print 'loading train batches'
-    num_train_batches = get_batches(options.train_data, network, options.output+'/train.')
-    print 'loading dev batches'
-    num_dev_batches = get_batches(options.dev_data, network, options.output+'/dev.', True)
+    print 'splitting train data'
+    num_train_batches = split_data(options.train_data, options.output+'/train.')
+    num_dev_batches = split_data(options.dev_data, options.output+'/dev.')
     print 'starting epochs'
     for e in range(10):
         print 'epochs', (e+1)
@@ -52,7 +51,7 @@ if __name__ == '__main__':
         progress = 0
         for i in range(num_train_batches):
             r = random.randint(0, num_train_batches-1)
-            train_minibatch = pickle.load(open(options.output+'/train.'+str(r), 'r'))
+            train_minibatch = get_batches(options.output+'/train.'+str(r), network)
             random.shuffle(train_minibatch)
             for mini_batch in train_minibatch:
                 errors.append(network.train(mini_batch))
@@ -60,9 +59,10 @@ if __name__ == '__main__':
             if len(errors) >= 100:
                 print 'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
                 errors = []
+
         dev_perf, num_item  = 0.0, 0
         for i in range(num_dev_batches):
-            dev_minibatch = pickle.load(open(options.output + '.dev.' + str(i), 'r'))
+            dev_minibatch = get_batches(options.output+'/dev.'+str(r), network)
             dev_perf += sum([network.eval(b) for b in dev_minibatch])
             num_item += dev_minibatch
         dev_perf /= num_item

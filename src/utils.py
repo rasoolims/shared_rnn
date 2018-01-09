@@ -27,9 +27,34 @@ def read_chars(file_path):
         ordered_chars[l] = sorted(list(chars[l]))
     return ordered_chars
 
+def split_data(file_path, output_path):
+    reader = gzip.open(file_path, 'r')
+    line = reader.readline()
+    i = 0
+    outputs = []
+    while line:
+        line = line.strip()
+        line2 = reader.readline().strip()
+        outputs.append(line)
+        outputs.append(line2)
+        if len(outputs) >= 200:
+            writer = gzip.open(output_path + str(i), 'w')
+            writer.write('\n'.join(outputs))
+            writer.close()
+            outputs = []
+            i += 1
+            sys.stdout.write(str(i)+'...')
+        line = reader.readline()
 
-def get_batches(file_path, model, batch_file_name, is_dev = False):
-    mini_batch_num = 0
+    if len(outputs) > 0:
+        writer = gzip.open(output_path + str(i), 'w')
+        i += 1
+        writer.write('\n'.join(outputs))
+        writer.close()
+    print i
+    return i
+
+def get_batches(file_path, model, is_dev = False):
     reader = gzip.open(file_path, 'r')
     line = reader.readline()
     mini_batches = []
@@ -59,22 +84,10 @@ def get_batches(file_path, model, batch_file_name, is_dev = False):
                     tags.append(sen_t[r+1:])
                 c_len[lang_id] = max(c_len[lang_id], max([len(w) for w in words]))
                 batch[lang_id].append((words, tags, lang_id, 0))
-        pfp = open(batch_file_name+str(mini_batch_num), 'w')
         mini_batches.append(get_minibatch(batch, c_len, w_len, model))
-        if len(mini_batches)>=100:
-            pickle.dump(mini_batches, pfp)
-            mini_batches = []
-            mini_batch_num += 1
-            if mini_batch_num%10==0:
-                sys.stdout.write(str(mini_batch_num)+'...')
         line = reader.readline()
 
-    if len(mini_batches) > 0:
-        pickle.dump(mini_batches, pfp)
-        mini_batch_num += 1
-
-    print str(mini_batch_num)
-    return mini_batch_num
+    return mini_batches
 
 def get_minibatch(batch, cur_c_len, cur_len, model):
     all_batches = []
