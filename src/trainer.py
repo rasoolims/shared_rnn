@@ -57,14 +57,14 @@ if __name__ == '__main__':
             for mini_batch in train_minibatch:
                 errors.append(network.train(mini_batch))
             progress += 1
-            if len(errors) >= 1:
+            if len(errors) >= 10:
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
                 errors = []
 
-        dev_perf, num_item  = 0.0, 0
-        for i in range(num_dev_batches):
-            dev_minibatch = get_batches(options.output+'/dev.'+str(r), network)
-            dev_perf += sum([network.eval(b) for b in dev_minibatch])
-            num_item += dev_minibatch
-        dev_perf /= num_item
-        print 'dev sim', dev_perf
+                dev_perf, num_item  = 0.0, 0
+                for i in range(num_dev_batches):
+                    dev_minibatch = get_batches(options.output+'/dev.'+str(r), network)
+                    dev_perf += sum([network.eval(b) for b in dev_minibatch])
+                    num_item += dev_minibatch
+                dev_perf /= num_item
+                print 'dev sim', dev_perf
