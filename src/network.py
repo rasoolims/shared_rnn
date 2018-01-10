@@ -148,37 +148,13 @@ class Network:
         h_out = self.rnn_mlp(mini_batch, True)[-1]
         t_out_d = dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1]))
         t_out = dy.transpose(t_out_d)
+
+        # Calculating the kq values for NCE.
+        k = float(t_out.dim()[0][0] - len(chars))
+        kq = dy.scalarInput(k / self.num_all_words)
+        lkq = dy.log(kq)
+
         '''
-        t_out_flat = dy.reshape(t_out, (h_out.dim()[0][0]* h_out.dim()[1], ))
-        exp_t_out = dy.exp(t_out_flat)
-        exp_t_out_neg = dy.exp(-t_out_flat)
-        exp_subtr = exp_t_out * dy.transpose(exp_t_out_neg)
-        subtr = dy.log(exp_subtr)
-        subtr_pow = dy.cmult(subtr, subtr)
-        subtr_reshape = dy.reshape(subtr_pow, (h_out.dim()[1], h_out.dim()[0][0], h_out.dim()[0][0], h_out.dim()[1]))
-        subtr_sum = dy.sum_cols(dy.sum_cols(subtr_reshape))
-        subtr_sum_sqrt = dy.sqrt(subtr_sum)
-        euc_distance = dy.reshape(subtr_sum_sqrt, (len(langs)*len(langs), ))
-        
-
-        euc_vec = []
-        for i in range(len(langs)):
-            for j in range(len(langs)):
-                dis = dy.sqrt(dy.squared_distance(t_out[i], t_out[j]))
-                euc_vec.append(dis)
-        euc_dis_manual = dy.concatenate(euc_vec)
-
-        
-        # Getting the L2 norm values.
-        norm_vals = dy.sqrt(dy.sum_cols(dy.cmult(t_out, t_out)))
-        norm_prods = dy.reshape(norm_vals * dy.transpose(norm_vals), (len(langs)*len(langs),))
-
-        # Because division by expression is not implemented, we use the exp-log-minus to get inverted value.
-        norm_prods_inv = dy.exp(-dy.log(norm_prods))
-        #norm_prod_inv_value = norm_prods_inv.value()
-        #norm_prod_inv_tensor = dy.inputTensor(norm_prod_inv_value)
-        '''
-
         # Getting outer product (all possible permutations)
         products = dy.reshape(t_out * t_out_d, (len(langs) * len(langs),))
 
@@ -186,16 +162,7 @@ class Network:
         #normalized_products = dy.cmult(products, norm_prod_inv_tensor)
         normalized_products = self.cut_value(products)
 
-        # Calculating the kq values for NCE.
-        k = float(t_out.dim()[0][0] - len(chars))
-        kq =  dy.scalarInput(k / self.num_all_words)
-        lkq = dy.log(kq)
-
         # Getting u(x,\theta).
-        # x =  normalized_products.npvalue()
-        # xnp = np.exp(x)
-        # print x
-        # print xnp
         exp_prods = dy.exp(normalized_products)
 
         # Masks for useless parts.
@@ -223,6 +190,21 @@ class Network:
 
         # Loss calculation.
         err = dy.sum_elems(loss_vec) / num_elems
+        '''
+
+        loss_values = []
+        for i in range(len(langs)):
+            for j in range(i + 1, len(langs)):
+                if (langs[i] != langs[j]) and (signs[i] == 1 or signs[j] == 1):
+                    # lu = dot_product(t_out[i], t_out[j]) / (norm_vals[i]*norm_vals[j])
+                    lu = -dy.squared_distance(t_out[i], t_out[j])
+                    ls = -dy.log(dy.exp(lu) + kq)
+                    if signs[i] == signs[j]:  # both one
+                        ls += lu
+                    else:
+                        ls += lkq
+                    loss_values.append(-ls)
+        err = dy.esum(loss_values) / len(loss_values)
         err.forward()
         err_value = err.value()
         print 'err_value', err_value
