@@ -221,7 +221,7 @@ class Network:
         sims = []
         for i in range(len(langs)):
             for j in range(i+1, len(langs)):
-                sims.append(dy.squared_distance(t_out[i], t_out[j]))
+                sims.append(dy.sqrt(dy.squared_distance(t_out[i], t_out[j])))
                 #sims.append(dot_product(t_out[i], t_out[j])/(norm_vals[i]*norm_vals[j]))
         sim = dy.esum(sims)
         sim.forward()

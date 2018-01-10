@@ -61,7 +61,6 @@ if __name__ == '__main__':
             if len(errors) >= 10:
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
                 errors = []
-                '''
                 dev_perf, num_item  = 0.0, 0
                 for d in range(min(10,num_dev_batches)): #todo
                     dev_minibatch = get_batches(options.output+'/dev.'+str(d), network)
@@ -69,4 +68,3 @@ if __name__ == '__main__':
                     num_item += num_dev_batches
                 dev_perf /= num_item
                 print 'dev sim', dev_perf
-                '''
