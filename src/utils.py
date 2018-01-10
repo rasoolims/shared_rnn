@@ -17,8 +17,8 @@ def read_chars(file_path):
         spl = line.strip().split('\t')
         for i in range(0, len(spl), 2):
             lang_id = spl[i].strip()
-            if not lang_id in lang_set:
-                continue
+            # if not lang_id in lang_set:
+            #     continue
             for sen_t in spl[i + 1].strip().split():
                 for char in sen_t[:sen_t.rfind('_')]:
                     chars[lang_id].add(char)
@@ -70,8 +70,8 @@ def get_batches(file_path, model, is_dev = False):
         c_len, w_len = defaultdict(int), 0
         for i in range(0, len(spl), 2):
             lang_id = spl[i].strip()
-            if not lang_id in lang_set:
-                continue
+            # if not lang_id in lang_set:
+            #     continue
             words, tags = [], []
             for sen_t in spl[i+1].strip().split():
                 r = sen_t.rfind('_')
@@ -85,8 +85,8 @@ def get_batches(file_path, model, is_dev = False):
             spl = line.strip().split('\t')
             for i in range(0, len(spl), 2):
                 lang_id = spl[i].strip()
-                if not lang_id in lang_set:
-                    continue
+                # if not lang_id in lang_set:
+                #     continue
                 words, tags = [], []
                 for sen_t in spl[i+1].strip().split():
                     r = sen_t.rfind('_')
