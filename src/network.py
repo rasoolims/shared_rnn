@@ -197,7 +197,7 @@ class Network:
             for j in range(i + 1, len(langs)):
                 if (langs[i] != langs[j]) and (signs[i] == 1 or signs[j] == 1):
                     # lu = dot_product(t_out[i], t_out[j]) / (norm_vals[i]*norm_vals[j])
-                    lu = -dy.squared_distance(t_out[i], t_out[j])
+                    lu = -dy.sqrt(dy.squared_distance(t_out[i], t_out[j]))
                     ls = -dy.log(dy.exp(lu) + kq)
                     if signs[i] == signs[j]:  # both one
                         ls += lu
