@@ -189,11 +189,10 @@ class Network:
         lkq = dy.log(kq)
 
         # Getting u(x,\theta).
-        x =  normalized_products.value()
-        for x_v in x:
-            value = math.exp(x_v)
-            if math.isinf(value) or math.isnan(value):
-                print x_v, value
+        x =  normalized_products.npvalue()
+        xnp = np.exp(x)
+        print x
+        print xnp
         exp_prods = dy.exp(normalized_products)
 
         # Masks for useless parts.
