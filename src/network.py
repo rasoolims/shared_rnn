@@ -1,6 +1,6 @@
 import dynet as dy
 import gzip
-import os,sys
+import os,sys,math
 from linalg import *
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -189,7 +189,11 @@ class Network:
         lkq = dy.log(kq)
 
         # Getting u(x,\theta).
-        print normalized_products.value()
+        x =  normalized_products.value()
+        for x_v in x:
+            value = math.exp(x_v)
+            if math.isinf(value) or math.isnan(value):
+                print x_v, value
         exp_prods = dy.exp(normalized_products)
 
         # Masks for useless parts.
