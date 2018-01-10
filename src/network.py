@@ -218,6 +218,7 @@ class Network:
         err = dy.sum_elems(loss_vec) / num_elems
         err.forward()
         err_value = err.value()
+        print 'err_value', err_value
         err.backward()
         self.trainer.update()
         dy.renew_cg()
