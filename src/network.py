@@ -16,6 +16,7 @@ class Network:
         self.pos = {word: ind + 2 for ind, word in enumerate(pos)}
         self.plookup = self.model.add_lookup_parameters((len(pos) + 2, options.pe))
         edim = options.we
+        self.cut_value = lambda x: dy.bmin(0.0001 * x, x)
 
         lang_set = {'de', 'en', 'es'}
         self.chars = dict()
@@ -147,7 +148,6 @@ class Network:
         h_out = self.rnn_mlp(mini_batch, True)[-1]
         t_out_d = dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1]))
         t_out = dy.transpose(t_out_d)
-
         '''
         t_out_flat = dy.reshape(t_out, (h_out.dim()[0][0]* h_out.dim()[1], ))
         exp_t_out = dy.exp(t_out_flat)
@@ -182,7 +182,7 @@ class Network:
 
         # Normalize products by their l2-norms.
         #normalized_products = dy.cmult(products, norm_prods_inv)
-        normalized_products = products
+        normalized_products = self.cut_value(products)
 
         # Calculating the kq values for NCE.
         k = float(t_out.dim()[0][0] - len(chars))
