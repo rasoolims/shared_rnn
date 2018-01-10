@@ -168,14 +168,12 @@ class Network:
         euc_dis_manual = dy.concatenate(euc_vec)
         '''
 
-        '''
         # Getting the L2 norm values.
         norm_vals = dy.sqrt(dy.sum_cols(dy.cmult(t_out, t_out)))
         norm_prods = dy.reshape(norm_vals * dy.transpose(norm_vals), (len(langs)*len(langs),))
 
         # Because division by expression is not implemented, we use the exp-log-minus to get inverted value.
         norm_prods_inv = dy.exp(-dy.log(norm_prods))
-        '''
 
         # Calculating the kq values for NCE.
         k = float(t_out.dim()[0][0] - len(chars))
@@ -183,10 +181,10 @@ class Network:
         lkq = dy.log(kq)
 
         # Getting outer product (all possible permutations)
-        normalized_products = dy.reshape(t_out * t_out_d, (len(langs)*len(langs),))
+        products = dy.reshape(t_out * t_out_d, (len(langs)*len(langs),))
 
         # Normalize products by their l2-norms.
-        #normalized_products = dy.cmult(products, norm_prods_inv)
+        normalized_products = dy.cmult(products, norm_prods_inv)
 
         # Getting u(x,\theta).
         exp_prods = dy.exp(normalized_products)
