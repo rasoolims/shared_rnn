@@ -182,7 +182,7 @@ class Network:
 
         # Normalize products by their l2-norms.
         #normalized_products = dy.cmult(products, norm_prods_inv)
-        normalized_products = dy.tanh(products)
+        normalized_products = products
 
         # Calculating the kq values for NCE.
         k = float(t_out.dim()[0][0] - len(chars))
