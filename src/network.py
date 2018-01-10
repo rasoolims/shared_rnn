@@ -209,7 +209,7 @@ class Network:
 
         # NCE nominator and denominator.
         ls_vec = dy.log(exp_prods + kq)
-        other_vec =  dy.concatenate([normalized_products[i] if final_signs[i]==1 else lkq for i in range(len(final_signs))])
+        other_vec =  dy.concatenate([euc_dis_manual[i] if final_signs[i]==1 else lkq for i in range(len(final_signs))])
 
         # NCE loss.
         loss_vec = dy.cmult(-other_vec + ls_vec, final_mask)
