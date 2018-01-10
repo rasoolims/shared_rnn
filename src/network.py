@@ -178,6 +178,7 @@ class Network:
         # Calculating the kq values for NCE.
         k = float(t_out.dim()[0][0] - len(chars))
         kq = dy.scalarInput(k / self.num_all_words)
+        print 'kq', kq.value()
         lkq = dy.log(kq)
 
         # Getting outer product (all possible permutations)
