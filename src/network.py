@@ -185,6 +185,7 @@ class Network:
 
         # Normalize products by their l2-norms.
         normalized_products = dy.cmult(products, norm_prods_inv)
+        normalized_products = dy.cmult(normalized_products, normalized_products) #todo
 
         # Getting u(x,\theta).
         exp_prods = dy.exp(normalized_products)
