@@ -178,10 +178,11 @@ class Network:
         '''
 
         # Getting outer product (all possible permutations)
-        normalized_products = dy.reshape(t_out * t_out_d, (len(langs) * len(langs),))
+        products = dy.reshape(t_out * t_out_d, (len(langs) * len(langs),))
 
         # Normalize products by their l2-norms.
         #normalized_products = dy.cmult(products, norm_prods_inv)
+        normalized_products = dy.tanh(products)
 
         # Calculating the kq values for NCE.
         k = float(t_out.dim()[0][0] - len(chars))
@@ -189,10 +190,10 @@ class Network:
         lkq = dy.log(kq)
 
         # Getting u(x,\theta).
-        x =  normalized_products.npvalue()
-        xnp = np.exp(x)
-        print x
-        print xnp
+        # x =  normalized_products.npvalue()
+        # xnp = np.exp(x)
+        # print x
+        # print xnp
         exp_prods = dy.exp(normalized_products)
 
         # Masks for useless parts.
