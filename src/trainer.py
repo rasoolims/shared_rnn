@@ -13,7 +13,7 @@ if __name__ == '__main__':
     parser.add_option("--params", dest="params", help="Parameters file", metavar="FILE", default="params.pickle")
     parser.add_option("--model", dest="model", help="Load/Save model file", metavar="FILE", default="parser.model")
     parser.add_option("--we", type="int", dest="we", default=100)
-    parser.add_option("--batch", type="int", dest="batch", default=10)
+    parser.add_option("--batch", type="int", dest="batch", default=5000)
     parser.add_option("--pe", type="int", dest="pe", default=100)
     parser.add_option("--ce", type="int", dest="ce", default=100)
     parser.add_option("--re", type="int", dest="re", default=25)
@@ -41,42 +41,31 @@ if __name__ == '__main__':
     chars = read_chars(options.train_data)
     universal_tags = ['ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM', 'PART', 'PRON', 'PROPN', 'PUNCT', 'SCONJ', 'SYM', 'VERB', 'X']
     network = Network(universal_tags, chars, options)
-    print 'Loading train/dev data'
-    train_data = read_raw_data(options.train_data)
-    dev_data = read_raw_data(options.dev_data)
-
+    print 'splitting train data'
+    num_train_batches = split_data(options.train_data, options.output+'/train.')
+    num_dev_batches = split_data(options.dev_data, options.output+'/dev.')
     print 'starting epochs'
     for e in range(10):
         print 'epochs', (e+1)
         errors = []
         progress = 0
-        random.shuffle(train_data)
-        end_index = len(train_data) - (len(train_data)%options.batch)
-        train_index = 0
-        while train_index < end_index:
+        for i in range(num_train_batches):
+            r = random.randint(0, num_train_batches-1)
             start = time.time()
-            mini_batch = get_batches(train_data[train_index:train_index+options.batch], network)
-            err_value = network.train(mini_batch)
-            train_index += options.batch
-            print 'time', float(time.time() - start), 'progress', round(float(100 * train_index) / end_index, 2), '%, loss', err_value
+            train_minibatch = get_batches(options.output+'/train.'+str(r), network)
+            random.shuffle(train_minibatch)
+            for mini_batch in train_minibatch:
+                errors.append(network.train(mini_batch))
+            progress += 1
 
-        # for i in range(num_train_batches):
-        #     r = random.randint(0, num_train_batches-1)
-        #     start = time.time()
-        #     train_minibatch = get_batches(options.output+'/train.'+str(r), network)
-        #     random.shuffle(train_minibatch)
-        #     for mini_batch in train_minibatch:
-        #         errors.append(network.train(mini_batch))
-        #     progress += 1
-        #
-        #     if len(errors) >= 10:
-        #         print 'time',float(time.time()-start),'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
-        #
-        #         errors = []
-        #         dev_perf, num_item  = 0.0, 0
-        #         for d in range(min(10,num_dev_batches)): #todo
-        #             dev_minibatch = get_batches(options.output+'/dev.'+str(d), network)
-        #             dev_perf += sum([network.eval(b) for b in dev_minibatch])
-        #             num_item += num_dev_batches
-        #         dev_perf /= num_item
-        #         print 'dev sim', dev_perf
+            if len(errors) >= 10:
+                print 'time',float(time.time()-start),'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
+
+                errors = []
+                dev_perf, num_item  = 0.0, 0
+                for d in range(min(10,num_dev_batches)): #todo
+                    dev_minibatch = get_batches(options.output+'/dev.'+str(d), network)
+                    dev_perf += sum([network.eval(b) for b in dev_minibatch])
+                    num_item += num_dev_batches
+                dev_perf /= num_item
+                print 'dev sim', dev_perf

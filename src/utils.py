@@ -30,9 +30,6 @@ def read_chars(file_path):
         ordered_chars[l] = sorted(list(chars[l]))
     return ordered_chars
 
-def read_raw_data(file_path):
-    return gzip.open(file_path, 'r').read().strip().split('\n')
-
 def split_data(file_path, output_path):
     reader = gzip.open(file_path, 'r')
     line = reader.readline()
@@ -61,11 +58,16 @@ def split_data(file_path, output_path):
     print i
     return i
 
-def get_batches(train_instances, model, is_dev=False):
-    c_len, w_len = defaultdict(int), 0
-    batch = defaultdict(list)
-    for line_num, line in enumerate(train_instances):
+def get_batches(file_path, model, is_dev = False):
+    reader = gzip.open(file_path, 'r')
+    line = reader.readline()
+    mini_batches = []
+
+
+    while line:
         spl = line.strip().split('\t')
+        batch = defaultdict(list)
+        c_len, w_len = defaultdict(int), 0
         for i in range(0, len(spl), 2):
             lang_id = spl[i].strip()
             # if not lang_id in lang_set:
@@ -77,8 +79,25 @@ def get_batches(train_instances, model, is_dev=False):
                 tags.append(sen_t[r+1:])
             c_len[lang_id] = max(c_len[lang_id], max([len(w) for w in words]))
             w_len = max(w_len, len(words))
-            batch[lang_id].append((words, tags, lang_id, line_num))
-    return get_minibatch(batch, c_len, w_len, model)
+            batch[lang_id].append((words, tags, lang_id, 1))
+        if not is_dev:
+            line = reader.readline()
+            spl = line.strip().split('\t')
+            for i in range(0, len(spl), 2):
+                lang_id = spl[i].strip()
+                # if not lang_id in lang_set:
+                #     continue
+                words, tags = [], []
+                for sen_t in spl[i+1].strip().split():
+                    r = sen_t.rfind('_')
+                    words.append(sen_t[:r])
+                    tags.append(sen_t[r+1:])
+                c_len[lang_id] = max(c_len[lang_id], max([len(w) for w in words]))
+                batch[lang_id].append((words, tags, lang_id, 0))
+        mini_batches.append(get_minibatch(batch, c_len, w_len, model))
+        line = reader.readline()
+
+    return mini_batches
 
 def get_minibatch(batch, cur_c_len, cur_len, model):
     all_batches = []

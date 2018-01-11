@@ -144,7 +144,6 @@ class Network:
 
     def train(self, mini_batch):
         words, pos_tags, chars, langs, signs, masks = mini_batch
-
         # Getting the last hidden layer from BiLSTM.
         h_out = self.rnn_mlp(mini_batch, True)[-1]
         t_out_d = dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1]))
@@ -156,13 +155,12 @@ class Network:
         lkq = dy.log(kq)
 
         loss_values = []
-
         for i in range(len(langs)):
             for j in range(i + 1, len(langs)):
-                if i != j:
+                if (langs[i] != langs[j]) and (signs[i] == 1 or signs[j] == 1):
                     lu = -dy.sqrt(dy.squared_distance(t_out[i], t_out[j]))
                     ls = -dy.log(dy.exp(lu) + kq)
-                    if signs[i] == signs[j]:  # Translation of each other.
+                    if signs[i] == signs[j]:  # both one
                         ls += lu
                     else:
                         ls += lkq
