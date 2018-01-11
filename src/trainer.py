@@ -53,19 +53,16 @@ if __name__ == '__main__':
             r = random.randint(0, num_train_batches-1)
             start = time.time()
             train_minibatch = get_batches(options.output+'/train.'+str(r), network)
-            random.shuffle(train_minibatch)
-            for mini_batch in train_minibatch:
-                errors.append(network.train(mini_batch))
+            # random.shuffle(train_minibatch)
+            error = network.train(train_minibatch)
             progress += 1
+            print 'time',float(time.time()-start),'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', error
 
-            if len(errors) >= 10:
-                print 'time',float(time.time()-start),'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
-
-                errors = []
-                dev_perf, num_item  = 0.0, 0
-                for d in range(min(10,num_dev_batches)): #todo
-                    dev_minibatch = get_batches(options.output+'/dev.'+str(d), network)
-                    dev_perf += sum([network.eval(b) for b in dev_minibatch])
-                    num_item += num_dev_batches
-                dev_perf /= num_item
-                print 'dev sim', dev_perf
+        errors = []
+        dev_perf, num_item  = 0.0, 0
+        for d in range(num_dev_batches):
+            dev_minibatch = get_batches(options.output+'/dev.'+str(d), network)
+            dev_perf += sum([network.eval(b) for b in dev_minibatch])
+            num_item += num_dev_batches
+        dev_perf /= num_item
+        print 'dev sim', dev_perf
