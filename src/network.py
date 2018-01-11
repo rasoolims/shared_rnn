@@ -209,7 +209,7 @@ class Network:
         print 'err_value', err_value
         err.backward()
         self.trainer.update()
-        dy.renew_cg(immediate_compute = True, check_validity = True) #todo
+        dy.renew_cg()
         return err_value
 
     def eval(self, mini_batch):
