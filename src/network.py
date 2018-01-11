@@ -154,13 +154,18 @@ class Network:
         kq = dy.scalarInput(k / self.num_all_words)
         lkq = dy.log(kq)
 
-        '''
+        # Getting the L2 norm values.
+        norm_vals = dy.sqrt(dy.sum_cols(dy.cmult(t_out, t_out)))
+        norm_prods = dy.reshape(norm_vals * dy.transpose(norm_vals), (len(langs) * len(langs),))
+
+        # Because division by expression is not implemented, we use the exp-log-minus to get inverted value.
+        norm_prods_inv = dy.exp(-dy.log(norm_prods))
+
         # Getting outer product (all possible permutations)
         products = dy.reshape(t_out * t_out_d, (len(langs) * len(langs),))
 
         # Normalize products by their l2-norms.
-        #normalized_products = dy.cmult(products, norm_prod_inv_tensor)
-        normalized_products = self.cut_value(products)
+        normalized_products = dy.cmult(products, norm_prods_inv)
 
         # Getting u(x,\theta).
         exp_prods = dy.exp(normalized_products)
@@ -190,8 +195,8 @@ class Network:
 
         # Loss calculation.
         err = dy.sum_elems(loss_vec) / num_elems
-        '''
 
+        '''
         loss_values = []
         for i in range(len(langs)):
             for j in range(i + 1, len(langs)):
@@ -204,6 +209,7 @@ class Network:
                         ls += lkq
                     loss_values.append(-ls)
         err = dy.esum(loss_values) / len(loss_values)
+        '''
         err.forward()
         err_value = err.value()
         print 'err_value', err_value
