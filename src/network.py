@@ -142,33 +142,36 @@ class Network:
             norms.append(dy.squared_norm(v[i]))
         return dy.concatenate(norms)
 
-    def train(self, mini_batch):
-        words, pos_tags, chars, langs, signs, masks = mini_batch
-        # Getting the last hidden layer from BiLSTM.
-        h_out = self.rnn_mlp(mini_batch, True)[-1]
-        t_out_d = dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1]))
-        t_out = dy.transpose(t_out_d)
+    def train(self, mini_batches):
+        errors = []
+        for minibatch in mini_batches:
+            words, pos_tags, chars, langs, signs, masks = minibatch
+            # Getting the last hidden layer from BiLSTM.
+            h_out = self.rnn_mlp(minibatch, True)[-1]
+            t_out_d = dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1]))
+            t_out = dy.transpose(t_out_d)
 
-        # Calculating the kq values for NCE.
-        k = float(t_out.dim()[0][0] - len(chars))
-        kq = dy.scalarInput(k / self.num_all_words)
-        lkq = dy.log(kq)
+            # Calculating the kq values for NCE.
+            k = float(t_out.dim()[0][0] - len(chars))
+            kq = dy.scalarInput(k / self.num_all_words)
+            lkq = dy.log(kq)
 
-        loss_values = []
-        for i in range(len(langs)):
-            for j in range(i + 1, len(langs)):
-                if (langs[i] != langs[j]) and (signs[i] == 1 or signs[j] == 1):
-                    lu = -dy.sqrt(dy.squared_distance(t_out[i], t_out[j]))
-                    ls = -dy.log(dy.exp(lu) + kq)
-                    if signs[i] == signs[j]:  # both one
-                        ls += lu
-                    else:
-                        ls += lkq
-                    loss_values.append(-ls)
-        err = dy.esum(loss_values) / len(loss_values)
-
-        err.forward()
-        err_value = err.value()
+            loss_values = []
+            for i in range(len(langs)):
+                for j in range(i + 1, len(langs)):
+                    if (langs[i] != langs[j]) and (signs[i] == 1 or signs[j] == 1):
+                        lu = -dy.sqrt(dy.squared_distance(t_out[i], t_out[j]))
+                        ls = -dy.log(dy.exp(lu) + kq)
+                        if signs[i] == signs[j]:  # both one
+                            ls += lu
+                        else:
+                            ls += lkq
+                        loss_values.append(-ls)
+            err = dy.esum(loss_values) / len(loss_values)
+            errors.append(err)
+        loss = dy.esum(errors)/len(errors)
+        loss.forward()
+        err_value = loss.value()
         print 'err_value', err_value
         err.backward()
         self.trainer.update()
