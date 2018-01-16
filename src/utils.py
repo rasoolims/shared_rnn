@@ -26,6 +26,7 @@ def read_chars(file_path):
                     for char in sen_t[:sen_t.rfind('_')]:
                         chars[lang_id].add(char)
             except:
+                print k
                 print line
                 print spl
                 print i+1
