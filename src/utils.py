@@ -19,22 +19,9 @@ def read_chars(file_path):
             lang_id = spl[i].strip()
             # if not lang_id in lang_set:
             #     continue
-            if i+1 >= len(spl):
-                print line.strip()
-            try:
-                for sen_t in spl[i + 1].strip().split():
-                    for char in sen_t[:sen_t.rfind('_')]:
-                        chars[lang_id].add(char)
-            except:
-                print k
-                print line
-                print spl
-                print i+1
-                print spl[i + 1]
-
-                for sen_t in spl[i + 1].strip().split():
-                    for char in sen_t[:sen_t.rfind('_')]:
-                        chars[lang_id].add(char)
+            for sen_t in spl[i + 1].strip().split():
+                for char in sen_t[:sen_t.rfind('_')]:
+                    chars[lang_id].add(char)
         if (k+1)%1000==0:
             sys.stdout.write(str(k+1) + '...')
     print (k+1)
