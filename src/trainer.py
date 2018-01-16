@@ -57,7 +57,7 @@ if __name__ == '__main__':
             train_minibatch = get_batches(options.output+'/train.'+str(r), network)
             random.shuffle(train_minibatch)
             for mini_batch in train_minibatch:
-                errors.append(network.train(mini_batch, num_train_batches))
+                errors.append(network.train(mini_batch, num_train_batches*10))
             progress += 1
 
             if len(errors) >= 10:
