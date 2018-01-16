@@ -1,7 +1,7 @@
 from optparse import OptionParser
 from network import Network
 from utils import *
-import pickle, time
+import pickle, time, os, sys
 
 if __name__ == '__main__':
     parser = OptionParser()
@@ -39,6 +39,8 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
     print 'loading chars'
     chars = read_chars(options.train_data)
+    with open(os.path.join(options.output, "params.pickle"), 'w') as paramsfp:
+        pickle.dump((chars, options), paramsfp)
     universal_tags = ['ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM', 'PART', 'PRON', 'PROPN', 'PUNCT', 'SCONJ', 'SYM', 'VERB', 'X']
     network = Network(universal_tags, chars, options)
     print 'splitting train data'
@@ -55,7 +57,7 @@ if __name__ == '__main__':
             train_minibatch = get_batches(options.output+'/train.'+str(r), network)
             random.shuffle(train_minibatch)
             for mini_batch in train_minibatch:
-                errors.append(network.train(mini_batch))
+                errors.append(network.train(mini_batch, num_train_batches))
             progress += 1
 
             if len(errors) >= 10:
@@ -63,9 +65,10 @@ if __name__ == '__main__':
 
                 errors = []
                 dev_perf, num_item  = 0.0, 0
-                for d in range(min(10,num_dev_batches)): #todo
-                    dev_minibatch = get_batches(options.output+'/dev.'+str(d), network)
-                    dev_perf += sum([network.eval(b) for b in dev_minibatch])
-                    num_item += num_dev_batches
-                dev_perf /= num_item
-                print 'dev sim', dev_perf
+        for d in range(num_dev_batches):
+            dev_minibatch = get_batches(options.output+'/dev.'+str(d), network)
+            dev_perf += sum([network.eval(b) for b in dev_minibatch])
+            num_item += num_dev_batches
+        dev_perf /= num_item
+        print 'dev sim for iteration', e+1, 'is', dev_perf
+        network.save(options.output+'/model.'+str(e+1))

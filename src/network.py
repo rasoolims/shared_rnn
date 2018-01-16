@@ -84,10 +84,10 @@ class Network:
 
         self.generate_emb_mask = _emb_mask_generator
 
-    def Save(self, filename):
+    def save(self, filename):
         self.model.save(filename)
 
-    def Load(self, filename):
+    def load(self, filename):
         self.model.populate(filename)
 
     def bi_rnn(self, inputs, batch_size=None, dropout_x=0., dropout_h=0.):
@@ -142,7 +142,7 @@ class Network:
             norms.append(dy.squared_norm(v[i]))
         return dy.concatenate(norms)
 
-    def train(self, mini_batch):
+    def train(self, mini_batch, num_train):
         words, pos_tags, chars, langs, signs, masks = mini_batch
         # Getting the last hidden layer from BiLSTM.
         h_out = self.rnn_mlp(mini_batch, True)[-1]
@@ -151,7 +151,7 @@ class Network:
 
         # Calculating the kq values for NCE.
         k = float(t_out.dim()[0][0] - len(chars))
-        kq = dy.scalarInput(k / self.num_all_words)
+        kq = dy.scalarInput(k / num_train)
         lkq = dy.log(kq)
 
         loss_values = []
