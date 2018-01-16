@@ -21,9 +21,18 @@ def read_chars(file_path):
             #     continue
             if i+1 >= len(spl):
                 print line.strip()
-            for sen_t in spl[i + 1].strip().split():
-                for char in sen_t[:sen_t.rfind('_')]:
-                    chars[lang_id].add(char)
+            try:
+                for sen_t in spl[i + 1].strip().split():
+                    for char in sen_t[:sen_t.rfind('_')]:
+                        chars[lang_id].add(char)
+            except:
+                print spl
+                print i+1
+                print spl[i + 1]
+
+                for sen_t in spl[i + 1].strip().split():
+                    for char in sen_t[:sen_t.rfind('_')]:
+                        chars[lang_id].add(char)
         if (k+1)%1000==0:
             sys.stdout.write(str(k+1) + '...')
     print (k+1)
