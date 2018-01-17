@@ -49,7 +49,7 @@ if __name__ == '__main__':
         progress = 0
         train_len = len(data.en2dict)
         start = time.time()
-        for i in range():
+        for i in range(train_len):
             errors.append(network.train(data.get_next_batch(network, 4), train_len))
             progress += 1
             if len(errors) >= 10:
