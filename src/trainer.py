@@ -51,11 +51,7 @@ if __name__ == '__main__':
         start = time.time()
         for i in range(train_len):
             minibatch = data.get_next_batch(network, 2)
-            batch_time = time.time()-start
-            start = time.time()
             errors.append(network.train(minibatch, train_len))
-            train_time = time.time()-start
-            print 'batch-time', batch_time, 'train_time', train_time
             progress += 1
             if len(errors) >= 10:
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
