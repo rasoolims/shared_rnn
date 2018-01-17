@@ -49,7 +49,7 @@ class Data:
                 self.en2dict_dev[en_sen] = en2dict[en_sen]
 
         self.neg_examples = defaultdict(list)
-        for lang in self.lang_sentences_set.keys():
+        for lang in lang_sentences_set.keys():
             self.neg_examples[lang] = list(lang_sentences_set[lang])
             print lang, len(self.neg_examples[lang])
 
