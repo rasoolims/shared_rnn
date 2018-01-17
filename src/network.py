@@ -185,9 +185,8 @@ class Network:
         for i in range(len(langs)):
             for j in range(i+1, len(langs)):
                 sims.append(dy.sqrt(dy.squared_distance(t_out[i], t_out[j])))
-                #sims.append(dot_product(t_out[i], t_out[j])/(norm_vals[i]*norm_vals[j]))
         sim = dy.esum(sims)
         sim.forward()
-        sim_value = sim.value() #/ len(sims)
+        sim_value = sim.value() / len(sims)
         dy.renew_cg()
         return sim_value

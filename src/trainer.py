@@ -58,10 +58,15 @@ if __name__ == '__main__':
                 start = time.time()
                 errors = []
                 dev_perf, num_item  = 0.0, 0
-        # for d in range(num_dev_batches):
-        #     dev_minibatch = get_batches(options.output+'/dev.'+str(d), network)
-        #     dev_perf += sum([network.eval(b) for b in dev_minibatch])
-        #     num_item += len(dev_minibatch)
-        # dev_perf /= num_item
-        # print 'dev sim for iteration', e+1, 'is', dev_perf
+
+                for dev_batch in data.get_dev_batches(network):
+                    dev_perf += network.eval(dev_batch)
+                dev_perf /= len(data.de2dict_dev)
+                print 'dev sim for iteration', e + 1, 'is', dev_perf
+                network.save(options.output + '/model.' + str(e + 1))
+
+        for dev_batch in data.get_dev_batches(network):
+            dev_perf += network.eval(dev_batch)
+        dev_perf /= len(data.de2dict_dev)
+        print 'dev sim for iteration', e+1, 'is', dev_perf
         network.save(options.output+'/model.'+str(e+1))

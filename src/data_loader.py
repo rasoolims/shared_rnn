@@ -100,6 +100,26 @@ class Data:
         if len(neg_output)>0:
             return '\t'.join(output)+'\n'+'\t'.join(neg_output)
 
+    def get_dev_batches(self, model):
+        for de_sen in self.de2dict_dev.keys():
+            output = ['de', de_sen]
+            for pr in self.de2dict[de_sen]:
+                output.append(pr[0])
+                output.append(pr[1])
+            batch = defaultdict(list)
+            c_len, w_len = defaultdict(int), 0
+            for i in range(0, len(output), 2):
+                lang_id = output[i].strip()
+                words, tags = [], []
+                for sen_t in output[i + 1].strip().split():
+                    r = sen_t.rfind('_')
+                    words.append(sen_t[:r])
+                    tags.append(sen_t[r + 1:])
+                c_len[lang_id] = max(c_len[lang_id], max([len(w) for w in words]))
+                w_len = max(w_len, len(words))
+                batch[lang_id].append((words, tags, lang_id, 1))
+            yield self.get_minibatch(batch, c_len, w_len, model)
+
     def get_next_batch(self, model, num_langs):
         lines = None
         while lines is None:
