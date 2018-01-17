@@ -56,7 +56,7 @@ class Data:
         self.chars = dict()
         for l in chars.keys():
             self.chars[l] = sorted(list(chars[l]))
-
+        self.langs = list(self.langs)
         print 'Object data is completely loaded!'
 
     def get_next(self, num_langs=3):
