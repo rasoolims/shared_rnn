@@ -94,7 +94,8 @@ class Data:
                 neg_output.append(neg_ids[i])
                 neg_output.append(neg_sens[i])
 
-        return '\t'.join(output)+'\n'+'\t'.join(neg_output)
+        if len(neg_output)>0:
+            return '\t'.join(output)+'\n'+'\t'.join(neg_output)
 
     def get_next_batch(self, model, num_langs):
         lines = None
