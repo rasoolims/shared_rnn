@@ -2,13 +2,11 @@ from optparse import OptionParser
 from network import Network
 from utils import *
 import pickle, time, os, sys
+from data_loader import Data
 
 if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option("--train", dest="train_data",  metavar="FILE", default=None)
-    parser.add_option("--dev", dest="dev_data", metavar="FILE", default=None)
-    parser.add_option("--test", dest="test_data", metavar="FILE", default=None)
-    parser.add_option("--output", dest="conll_output",  metavar="FILE", default=None)
     parser.add_option("--extrn", dest="external_embedding", help="External embeddings", metavar="FILE")
     parser.add_option("--params", dest="params", help="Parameters file", metavar="FILE", default="params.pickle")
     parser.add_option("--model", dest="model", help="Load/Save model file", metavar="FILE", default="parser.model")
@@ -38,37 +36,31 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
     print 'loading chars'
-    chars = read_chars(options.train_data)
+    data = Data(options.train_data)
     with open(os.path.join(options.output, "params.pickle"), 'w') as paramsfp:
-        pickle.dump((chars, options), paramsfp)
+        pickle.dump((data.chars, options), paramsfp)
     universal_tags = ['ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM', 'PART', 'PRON', 'PROPN', 'PUNCT', 'SCONJ', 'SYM', 'VERB', 'X']
-    network = Network(universal_tags, chars, options)
+    network = Network(universal_tags, data.chars, options)
     print 'splitting train data'
-    num_train_batches = split_data(options.train_data, options.output+'/train.')
-    num_dev_batches = split_data(options.dev_data, options.output+'/dev.')
     print 'starting epochs'
     for e in range(10):
         print 'epochs', (e+1)
         errors = []
         progress = 0
-        for i in range(num_train_batches):
-            r = random.randint(0, num_train_batches-1)
-            start = time.time()
-            train_minibatch = get_batches(options.output+'/train.'+str(r), network)
-            random.shuffle(train_minibatch)
-            for mini_batch in train_minibatch:
-                errors.append(network.train(mini_batch, num_train_batches*10))
+        train_len = len(data.en2dict)
+        start = time.time()
+        for i in range():
+            errors.append(network.train(data.get_next_batch(network, 4), train_len))
             progress += 1
-
             if len(errors) >= 10:
-                print 'time',float(time.time()-start),'progress', round(float(100*progress)/num_train_batches, 2), '%, loss', sum(errors)/len(errors)
-
+                print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
+                start = time.time()
                 errors = []
                 dev_perf, num_item  = 0.0, 0
-        for d in range(num_dev_batches):
-            dev_minibatch = get_batches(options.output+'/dev.'+str(d), network)
-            dev_perf += sum([network.eval(b) for b in dev_minibatch])
-            num_item += len(dev_minibatch)
-        dev_perf /= num_item
-        print 'dev sim for iteration', e+1, 'is', dev_perf
+        # for d in range(num_dev_batches):
+        #     dev_minibatch = get_batches(options.output+'/dev.'+str(d), network)
+        #     dev_perf += sum([network.eval(b) for b in dev_minibatch])
+        #     num_item += len(dev_minibatch)
+        # dev_perf /= num_item
+        # print 'dev sim for iteration', e+1, 'is', dev_perf
         network.save(options.output+'/model.'+str(e+1))
