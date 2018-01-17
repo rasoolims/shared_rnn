@@ -39,10 +39,10 @@ class Network:
 
             if len(external_embedding[lang]) > 0:
                 edim = len(external_embedding[lang].values()[0])
-            self.chars[lang] = {c: i + 2 for i, c in enumerate(chars)}
+            self.chars[lang] = {c: i + 2 for i, c in enumerate(chars[lang])}
 
             print 'Loaded vector', edim, 'and', len(external_embedding[lang]), 'for', lang
-            self.clookup[lang] = self.model.add_lookup_parameters((len(chars) + 2, options.ce))
+            self.clookup[lang] = self.model.add_lookup_parameters((len(chars[lang]) + 2, options.ce))
             self.char_lstm[lang] = dy.BiRNNBuilder(1, options.ce, edim, self.model, dy.VanillaLSTMBuilder)
             self.proj_mat[lang] = self.model.add_parameters((edim + options.pe, edim + options.pe))
 
