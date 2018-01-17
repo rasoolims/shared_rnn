@@ -57,14 +57,8 @@ if __name__ == '__main__':
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
                 start = time.time()
                 errors = []
-                dev_perf, num_item  = 0.0, 0
 
-                for dev_batch in data.get_dev_batches(network):
-                    dev_perf += network.eval(dev_batch)
-                dev_perf /= len(data.de2dict_dev)
-                print 'dev sim for iteration', e + 1, 'is', dev_perf
-                network.save(options.output + '/model.' + str(e + 1))
-
+        dev_perf = 0
         for dev_batch in data.get_dev_batches(network):
             dev_perf += network.eval(dev_batch)
         dev_perf /= len(data.de2dict_dev)
