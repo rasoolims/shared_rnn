@@ -50,7 +50,7 @@ if __name__ == '__main__':
         train_len = len(data.de2dict)
         start = time.time()
         for i in range(train_len):
-            errors.append(network.train(data.get_next_batch(network, 4), train_len))
+            errors.append(network.train(data.get_next_batch(network, 2), train_len))
             progress += 1
             if len(errors) >= 10:
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
