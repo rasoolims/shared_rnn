@@ -80,13 +80,14 @@ class Data:
             neg_ids = ['de' for _ in i_]
 
         for pr in self.de2dict[de_sen]:
-            output.append(pr[0])
-            output.append(pr[1])
-            neg_examples_ = self.neg_examples[pr[0]]
-            len_ = len(neg_examples_)
-            i_ = [random.randint(1, len_ - 1) for _ in range(5)]
-            neg_sens = neg_sens + [neg_examples_[ind] for ind in i_]
-            neg_ids = neg_ids + [pr[0] for _ in i_]
+            if pr[0] in langs_to_use:
+                output.append(pr[0])
+                output.append(pr[1])
+                neg_examples_ = self.neg_examples[pr[0]]
+                len_ = len(neg_examples_)
+                i_ = [random.randint(1, len_ - 1) for _ in range(5)]
+                neg_sens = neg_sens + [neg_examples_[ind] for ind in i_]
+                neg_ids = neg_ids + [pr[0] for _ in i_]
         neg_output = []
         if len(output) >= 4:
             for i in range(len(neg_sens)):
