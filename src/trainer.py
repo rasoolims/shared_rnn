@@ -50,7 +50,7 @@ if __name__ == '__main__':
         train_len = len(data.de2dict)
         start = time.time()
         for i in range(train_len):
-            minibatch = data.get_next_batch(network, 2)
+            minibatch = data.get_next_batch(network, 4)
             errors.append(network.train(minibatch, train_len))
             progress += 1
             if len(errors) >= 10:

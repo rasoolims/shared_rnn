@@ -34,19 +34,19 @@ class Data:
 
         self.de2dict, self.de2dict_dev = dict(), dict()
 
-        for en_sen in de2dict.keys():
+        for de_sen in de2dict.keys():
             if random.randint(0, 99) != 99:
-                self.de2dict[en_sen] = de2dict[en_sen]
-                for lsenPair in de2dict[en_sen]:
+                self.de2dict[de_sen] = de2dict[de_sen]
+                for lsenPair in de2dict[de_sen]:
                     l2, sen = lsenPair
-                    lang_sentences_set['de'].add(en_sen)
-                    for ch in en_sen:
+                    lang_sentences_set['de'].add(de_sen)
+                    for ch in de_sen:
                         chars['de'].add(ch)
                     lang_sentences_set[l2].add(sen)
                     for ch in sen:
                         chars[l2].add(ch)
             else:
-                self.de2dict_dev[en_sen] = de2dict[en_sen]
+                self.de2dict_dev[de_sen] = de2dict[de_sen]
 
         self.neg_examples = defaultdict(list)
         for lang in lang_sentences_set.keys():
@@ -84,6 +84,9 @@ class Data:
                 output.append(pr[0])
                 output.append(pr[1])
                 neg_examples_ = self.neg_examples[pr[0]]
+                if len(neg_examples_)==0:
+                    print pr[0]
+                    assert len(neg_examples_)>0
                 len_ = len(neg_examples_)
                 i_ = [random.randint(1, len_ - 1) for _ in range(5)]
                 neg_sens = neg_sens + [neg_examples_[ind] for ind in i_]
@@ -100,7 +103,9 @@ class Data:
     def get_next_batch(self, model, num_langs):
         lines = None
         while lines is None:
-            lines = self.get_next(num_langs).strip().split('\n')
+            output = self.get_next(num_langs)
+            if output:
+                lines = output.strip().split('\n')
         spl = lines[0].strip().split('\t')
         batch = defaultdict(list)
         c_len, w_len = defaultdict(int), 0
