@@ -68,7 +68,7 @@ if __name__ == '__main__':
         for d in range(num_dev_batches):
             dev_minibatch = get_batches(options.output+'/dev.'+str(d), network)
             dev_perf += sum([network.eval(b) for b in dev_minibatch])
-            num_item += num_dev_batches
+            num_item += len(dev_minibatch)
         dev_perf /= num_item
         print 'dev sim for iteration', e+1, 'is', dev_perf
         network.save(options.output+'/model.'+str(e+1))
