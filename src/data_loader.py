@@ -103,7 +103,7 @@ class Data:
     def get_dev_batches(self, model):
         for de_sen in self.de2dict_dev.keys():
             output = ['de', de_sen]
-            for pr in self.de2dict[de_sen]:
+            for pr in self.de2dict_dev[de_sen]:
                 output.append(pr[0])
                 output.append(pr[1])
             batch = defaultdict(list)
