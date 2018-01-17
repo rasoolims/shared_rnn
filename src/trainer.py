@@ -47,7 +47,7 @@ if __name__ == '__main__':
         print 'epochs', (e+1)
         errors = []
         progress = 0
-        train_len = len(data.en2dict)
+        train_len = len(data.de2dict)
         start = time.time()
         for i in range(train_len):
             errors.append(network.train(data.get_next_batch(network, 4), train_len))

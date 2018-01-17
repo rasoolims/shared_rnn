@@ -6,16 +6,16 @@ class Data:
     def __init__(self, bible_folder):
         lang_sentences_set = defaultdict(set)
         self.langs = set()
-        en2dict = defaultdict(list)
+        de2dict = defaultdict(list)
         self.dev_dicts = []
         chars = defaultdict(set)
         print 'creating dictionaries'
         for flat_dir in os.listdir(bible_folder):
             l1 = flat_dir[:flat_dir.rfind('_')]
             l2 = flat_dir[flat_dir.rfind('_') + 1:]
-            if l1 != 'en' and l2 != 'en':
+            if l1 != 'de' and l2 != 'de':
                 continue
-            if l2 == 'en':
+            if l2 == 'de':
                 l1, l2 = l2, l1
             self.langs.add(l1)
             self.langs.add(l2)
@@ -30,23 +30,23 @@ class Data:
 
             assert len(src_sens) == len(dst_sens)
             for i in range(len(src_sens)):
-                en2dict[src_sens[i]].append((l2, dst_sens[i]))
+                de2dict[src_sens[i]].append((l2, dst_sens[i]))
 
-        self.en2dict, self.en2dict_dev = dict(), dict()
+        self.de2dict, self.de2dict_dev = dict(), dict()
 
-        for en_sen in en2dict.keys():
+        for en_sen in de2dict.keys():
             if random.randint(0, 99) != 99:
-                self.en2dict[en_sen] = en2dict[en_sen]
-                for lsenPair in en2dict[en_sen]:
+                self.de2dict[en_sen] = de2dict[en_sen]
+                for lsenPair in de2dict[en_sen]:
                     l2, sen = lsenPair
-                    lang_sentences_set['en'].add(en_sen)
+                    lang_sentences_set['de'].add(en_sen)
                     for ch in en_sen:
-                        chars['en'].add(ch)
+                        chars['de'].add(ch)
                     lang_sentences_set[l2].add(sen)
                     for ch in sen:
                         chars[l2].add(ch)
             else:
-                self.en2dict_dev[en_sen] = en2dict[en_sen]
+                self.de2dict_dev[en_sen] = de2dict[en_sen]
 
         self.neg_examples = defaultdict(list)
         for lang in lang_sentences_set.keys():
@@ -57,29 +57,29 @@ class Data:
         for l in chars.keys():
             self.chars[l] = sorted(list(chars[l]))
         self.langs = list(self.langs)
-        print 'Object data is completely loaded!'
+        print 'Object data is completely loaded!', len(self.de2dict), len(self.de2dict_dev)
 
     def get_next(self, num_langs=3):
-        l = len(self.neg_examples['en'])
+        l = len(self.neg_examples['de'])
         r = random.randint(0, l-1)
-        en_sen = self.neg_examples['en'][r]
+        de_sen = self.neg_examples['de'][r]
         langs_to_use = set([self.langs[random.randint(0, len(self.langs) - 1)] for _ in range(num_langs)])
 
         output = []
-        if 'en' in langs_to_use:
-            output = ['en', en_sen]
-        neg_examples_ = self.neg_examples['en']
+        if 'de' in langs_to_use:
+            output = ['de', de_sen]
+        neg_examples_ = self.neg_examples['de']
         len_ = len(neg_examples_)
         i_ = [random.randint(1, len_ - 1) for _ in range(5)]
 
         neg_sens = []
         neg_ids = []
 
-        if 'en' in langs_to_use:
+        if 'de' in langs_to_use:
             neg_sens = [neg_examples_[ind] for ind in i_]
-            neg_ids = ['en' for _ in i_]
+            neg_ids = ['de' for _ in i_]
 
-        for pr in self.en2dict[en_sen]:
+        for pr in self.de2dict[de_sen]:
             output.append(pr[0])
             output.append(pr[1])
             neg_examples_ = self.neg_examples[pr[0]]
