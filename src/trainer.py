@@ -84,10 +84,14 @@ if __name__ == '__main__':
                     for lang in network.proj_mat.keys():
                         proj_mat_params[lang] = network.proj_mat[lang].expr().npvalue()
 
-                    pickle.dump((data.chars, options, deep_lstm_params, char_lstm_params, network.clookup.expr().npvalue(),
+                    clookup_params = dict()
+                    for lang in network.clookup.keys():
+                        clookup_params[lang] = network.clookup[lang].expr().npvalue()
+
+                    pickle.dump((data.chars, options, deep_lstm_params, char_lstm_params, clookup_params,
                                  proj_mat_params), paramsfp)
                 print 'done'
-                
+
         dev_perf = 0
         for dev_batch in data.get_dev_batches(network):
             dev_perf += network.eval(dev_batch)
@@ -118,5 +122,9 @@ if __name__ == '__main__':
             for lang in network.proj_mat.keys():
                 proj_mat_params[lang] = network.proj_mat[lang].expr().npvalue()
 
-            pickle.dump((data.chars, options, deep_lstm_params, char_lstm_params, network.clookup.expr().npvalue(),
+            clookup_params = dict()
+            for lang in network.clookup.keys():
+                clookup_params[lang] = network.clookup[lang].expr().npvalue()
+
+            pickle.dump((data.chars, options, deep_lstm_params, char_lstm_params, clookup_params,
                          proj_mat_params), paramsfp)
