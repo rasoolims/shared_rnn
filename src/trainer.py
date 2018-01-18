@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
                     pickle.dump((data.chars, options, deep_lstm_params, char_lstm_params, clookup_params,
                                  proj_mat_params, plookup_params), paramsfp)
-
+                    print 'saved!'
         dev_perf = 0
         for dev_batch in data.get_dev_batches(network):
             dev_perf += network.eval(dev_batch)
