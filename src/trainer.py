@@ -56,39 +56,39 @@ if __name__ == '__main__':
                 start = time.time()
                 errors = []
 
-            with open(os.path.join(options.output, "params.pickle." + str(e + 1)), 'w') as paramsfp:
-                deep_lstm_params = []
-                for i in range(len(network.deep_lstms.builder_layers)):
-                    builder = network.deep_lstms.builder_layers[i]
-                    params = builder[0].get_parameters()[0] + builder[1].get_parameters()[0]
-                    d_par = dict()
-                    for j in range(len(params)):
-                        d_par[j] = params[j].expr().npvalue()
-                    deep_lstm_params.append(d_par)
-
-                char_lstm_params = dict()
-                for lang in network.char_lstm.keys():
-                    char_lstm_params[lang] = []
-                    for i in range(len(network.char_lstm[lang].builder_layers)):
-                        builder = network.char_lstm[lang].builder_layers[i]
+                with open(os.path.join(options.output, "params.pickle." + str(e + 1)), 'w') as paramsfp:
+                    deep_lstm_params = []
+                    for i in range(len(network.deep_lstms.builder_layers)):
+                        builder = network.deep_lstms.builder_layers[i]
                         params = builder[0].get_parameters()[0] + builder[1].get_parameters()[0]
                         d_par = dict()
                         for j in range(len(params)):
                             d_par[j] = params[j].expr().npvalue()
-                        char_lstm_params[lang].append(d_par)
+                        deep_lstm_params.append(d_par)
 
-                proj_mat_params = dict()
-                for lang in network.proj_mat.keys():
-                    proj_mat_params[lang] = network.proj_mat[lang].expr().npvalue()
+                    char_lstm_params = dict()
+                    for lang in network.char_lstm.keys():
+                        char_lstm_params[lang] = []
+                        for i in range(len(network.char_lstm[lang].builder_layers)):
+                            builder = network.char_lstm[lang].builder_layers[i]
+                            params = builder[0].get_parameters()[0] + builder[1].get_parameters()[0]
+                            d_par = dict()
+                            for j in range(len(params)):
+                                d_par[j] = params[j].expr().npvalue()
+                            char_lstm_params[lang].append(d_par)
 
-                clookup_params = dict()
-                for lang in network.clookup.keys():
-                    clookup_params[lang] = network.clookup[lang].expr().npvalue()
+                    proj_mat_params = dict()
+                    for lang in network.proj_mat.keys():
+                        proj_mat_params[lang] = network.proj_mat[lang].expr().npvalue()
 
-                plookup_params = network.plookup.expr().npvalue()
+                    clookup_params = dict()
+                    for lang in network.clookup.keys():
+                        clookup_params[lang] = network.clookup[lang].expr().npvalue()
 
-                pickle.dump((data.chars, options, deep_lstm_params, char_lstm_params, clookup_params,
-                             proj_mat_params, plookup_params), paramsfp)
+                    plookup_params = network.plookup.expr().npvalue()
+
+                    pickle.dump((data.chars, options, deep_lstm_params, char_lstm_params, clookup_params,
+                                 proj_mat_params, plookup_params), paramsfp)
 
         dev_perf = 0
         for dev_batch in data.get_dev_batches(network):
