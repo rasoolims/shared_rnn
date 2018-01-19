@@ -6,13 +6,15 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 lang_set = {'de', 'en', 'es'}
 
-numberRegex = re.compile("[0-9]+|[0-9]+\\.[0-9]+|[0-9]+[0-9,]+");
 
+numberRegex = re.compile("[0-9]+|[0-9]+\\.[0-9]+|[0-9]+[0-9,]+")
+urlRegex = re.compile("((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)")
 
 def normalize(word):
-    return 'NUM' if numberRegex.match(word) else word.lower()
+    return '<num>' if numberRegex.match(word) else ('<url>' if urlRegex.match(word) else word.lower())
 
-
+def normalize_sent(sent):
+    return ' '.join([normalize(w) for w in sent.strip().split()])
 def is_punc(pos):
     return pos == '.' or pos == 'PUNC' or pos == 'PUNCT' or \
            pos == "#" or pos == "''" or pos == "(" or \

@@ -28,8 +28,6 @@ class Network:
         word_index = 2
         for f in os.listdir(options.external_embedding):
             lang = f[:-3]
-            # if not lang in lang_set:
-            #     continue
             efp = gzip.open(options.external_embedding+'/'+f, 'r')
             external_embedding[lang] = {line.split(' ')[0]: [float(f) for f in line.strip().split(' ')[1:]]
                                         for line in efp if len(line.split(' ')) > 2}

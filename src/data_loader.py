@@ -1,6 +1,7 @@
 import sys, os, codecs, random, pickle, gzip
 from collections import defaultdict
 import numpy as np
+from utils import *
 
 class Data:
     def __init__(self, bible_folder):
@@ -30,7 +31,7 @@ class Data:
 
             assert len(src_sens) == len(dst_sens)
             for i in range(len(src_sens)):
-                de2dict[src_sens[i]].append((l2, dst_sens[i]))
+                de2dict[normalize_sent(src_sens[i])].append((l2, normalize_sent(dst_sens[i])))
 
         self.de2dict, self.de2dict_dev = dict(), dict()
 
