@@ -123,6 +123,8 @@ class Network:
             posembed = [dy.lookup_batch(self.plookup, pos_tags[lang][i]) for i in range(len(pos_tags[lang]))] if self.options.use_pos else None
             lang_embeds = [dy.lookup_batch(self.lang_lookup, [self.lang2id[lang]]*len(pos_tags[lang])) for i in range(len(pos_tags[lang]))]
 
+            print lang_embeds[0].dim(), posembed[0].dim(), wembed[0].dim()
+            
             if not train:
                 inputs = [dy.concatenate([w, pos, lng_e]) for w, pos, lng_e in zip(wembed, posembed, lang_embeds)] if self.options.use_pos else wembed
                 inputs = [dy.tanh(self.proj_mat[lang].expr() * inp) for inp in inputs]
