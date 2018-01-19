@@ -162,8 +162,7 @@ class Data:
                             ch[offset] = model.chars.get(batch[lang_id][sen_position][0][w_pos][c_pos], 0)
                         offset += 1
                 chars_[c_pos] = np.array(ch)
-            chars_ = np.array(chars_)
-            chars[lang_id] = chars_
+            chars[lang_id] = np.array(chars_)
             pwords[lang_id] = np.array([np.array(
                 [model.evocab[langs[i]].get(batch[lang_id][i][0][j], 0) if j < len(batch[lang_id][i][0]) else model.PAD
                  for i in
