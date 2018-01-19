@@ -153,7 +153,7 @@ class Data:
         chars, pwords, pos = dict(), dict(), dict()
         for lang_id in batch.keys():
             chars_ = [list() for _ in range(max_c_len)]
-            for c_pos in range(cur_c_len):
+            for c_pos in range(max_c_len):
                 ch = [model.PAD] * (len(batch[lang_id]) * cur_len)
                 offset = 0
                 for w_pos in range(cur_len):
