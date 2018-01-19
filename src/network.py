@@ -132,6 +132,7 @@ class Network:
                     else [dy.cmult(w, wm) for w, wm in zip(wembed, emb_masks)]
                 inputs = [dy.tanh(self.proj_mat[lang].expr() * inp) for inp in inputs]
             all_inputs[l] = inputs
+            print inputs.dim()
 
 
         lstm_input = [dy.concatenate_to_batch([all_inputs[j][i] for j in range(len(all_inputs))]) for i in range(len(all_inputs[0]))]
