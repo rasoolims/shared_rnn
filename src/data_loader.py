@@ -41,10 +41,12 @@ class Data:
                 for lsenPair in de2dict[de_sen]:
                     l2, sen = lsenPair
                     lang_sentences_set['de'].add(de_sen)
-                    for ch in de_sen:
+                    words, tags = get_words_tags(de_sen)
+                    for ch in words:
                         chars['de'].add(ch)
                     lang_sentences_set[l2].add(sen)
-                    for ch in sen:
+                    words, tags = get_words_tags(sen)
+                    for ch in words:
                         chars[l2].add(ch)
             else:
                 self.de2dict_dev[de_sen] = de2dict[de_sen]
@@ -111,11 +113,7 @@ class Data:
             c_len, w_len = defaultdict(int), 0
             for i in range(0, len(output), 2):
                 lang_id = output[i].strip()
-                words, tags = [], []
-                for sen_t in output[i + 1].strip().split():
-                    r = sen_t.rfind('_')
-                    words.append(sen_t[:r])
-                    tags.append(sen_t[r + 1:])
+                words, tags = get_words_tags(output[i + 1])
                 c_len[lang_id] = max(c_len[lang_id], max([len(w) for w in words]))
                 w_len = max(w_len, len(words))
                 batch[lang_id].append((words, tags, lang_id, 1))
@@ -132,22 +130,14 @@ class Data:
         c_len, w_len = defaultdict(int), 0
         for i in range(0, len(spl), 2):
             lang_id = spl[i].strip()
-            words, tags = [], []
-            for sen_t in spl[i + 1].strip().split():
-                r = sen_t.rfind('_')
-                words.append(sen_t[:r])
-                tags.append(sen_t[r + 1:])
+            words, tags = get_words_tags(spl[i + 1])
             c_len[lang_id] = max(c_len[lang_id], max([len(w) for w in words]))
             w_len = max(w_len, len(words))
             batch[lang_id].append((words, tags, lang_id, 1))
         spl = lines[1].strip().split('\t')
         for i in range(0, len(spl), 2):
             lang_id = spl[i].strip()
-            words, tags = [], []
-            for sen_t in spl[i + 1].strip().split():
-                r = sen_t.rfind('_')
-                words.append(sen_t[:r])
-                tags.append(sen_t[r + 1:])
+            words, tags = get_words_tags(spl[i + 1])
             c_len[lang_id] = max(c_len[lang_id], max([len(w) for w in words]))
             batch[lang_id].append((words, tags, lang_id, 0))
 
