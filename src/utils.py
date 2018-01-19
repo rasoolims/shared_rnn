@@ -14,7 +14,7 @@ def normalize(word):
     return '<num>' if numberRegex.match(word) else ('<url>' if urlRegex.match(word) else word.lower())
 
 def normalize_sent(sent):
-    return ' '.join([normalize(w) for w in sent.strip().split()])
+    return ' '.join(['*root*_ROOT-POS']+[normalize(w) for w in sent.strip().split()])
 def is_punc(pos):
     return pos == '.' or pos == 'PUNC' or pos == 'PUNCT' or \
            pos == "#" or pos == "''" or pos == "(" or \
