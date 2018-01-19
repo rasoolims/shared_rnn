@@ -26,6 +26,7 @@ class Network:
         self.proj_mat = dict()
         external_embedding = dict()
         word_index = 2
+        input_dim = edim + options.le + options.pe if self.options.use_pos else edim
         for f in os.listdir(options.external_embedding):
             lang = f[:-3]
             efp = gzip.open(options.external_embedding+'/'+f, 'r')
@@ -42,7 +43,7 @@ class Network:
             print 'Loaded vector', edim, 'and', len(external_embedding[lang]), 'for', lang
             self.clookup[lang] = self.model.add_lookup_parameters((len(chars[lang]) + 2, options.ce))
             self.char_lstm[lang] = dy.BiRNNBuilder(1, options.ce, edim, self.model, dy.VanillaLSTMBuilder)
-            self.proj_mat[lang] = self.model.add_parameters((edim + options.pe, edim + options.pe))
+            self.proj_mat[lang] = self.model.add_parameters((input_dim, input_dim))
 
         self.elookup = self.model.add_lookup_parameters((word_index, edim))
         self.num_all_words = word_index
@@ -56,7 +57,6 @@ class Network:
         self.lang2id = {lang:i for i,lang in enumerate(self.evocab.keys())}
         self.lang_lookup = self.model.add_lookup_parameters((len(self.lang2id), options.le))
 
-        input_dim = edim + options.le + options.pe if self.options.use_pos else edim
         self.deep_lstms = dy.BiRNNBuilder(options.layer, input_dim, options.rnn * 2, self.model, dy.VanillaLSTMBuilder)
         for i in range(len(self.deep_lstms.builder_layers)):
             builder = self.deep_lstms.builder_layers[i]
