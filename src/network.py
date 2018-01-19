@@ -53,7 +53,10 @@ class Network:
             for word in external_embedding[lang].keys():
                 self.elookup.init_row(self.evocab[lang][word], external_embedding[lang][word])
 
-        input_dim = edim + options.pe if self.options.use_pos else edim
+        self.lang2id = {lang:i for i,lang in enumerate(self.evocab.keys())}
+        self.lang_lookup = self.model.add_lookup_parameters((len(self.lang2id), options.le))
+
+        input_dim = edim + options.le + options.pe if self.options.use_pos else edim
         self.deep_lstms = dy.BiRNNBuilder(options.layer, input_dim, options.rnn * 2, self.model, dy.VanillaLSTMBuilder)
         for i in range(len(self.deep_lstms.builder_layers)):
             builder = self.deep_lstms.builder_layers[i]
@@ -118,18 +121,20 @@ class Network:
                 cnn_reps[i] = dy.pick_batch(crnns, [i * words[lang].shape[1] + j for j in range(words[lang].shape[1])], 1)
             wembed = [dy.lookup_batch(self.elookup, words[lang][i]) + cnn_reps[i] for i in range(len(words[lang]))]
             posembed = [dy.lookup_batch(self.plookup, pos_tags[lang][i]) for i in range(len(pos_tags[lang]))] if self.options.use_pos else None
+            lang_embeds = [dy.lookup_batch(self.lang_lookup, [self.lang2id[lang]]*len(pos_tags[lang])) for i in range(len(pos_tags[lang]))]
 
             if not train:
-                inputs = [dy.concatenate([w, pos]) for w, pos in zip(wembed, posembed)] if self.options.use_pos else wembed
+                inputs = [dy.concatenate([w, pos, lng_e]) for w, pos, lng_e in zip(wembed, posembed, lang_embeds)] if self.options.use_pos else wembed
                 inputs = [dy.tanh(self.proj_mat[lang].expr() * inp) for inp in inputs]
             else:
                 emb_masks = self.generate_emb_mask(words[lang].shape[0], words[lang].shape[1])
-                inputs = [dy.concatenate([dy.cmult(w, wm), dy.cmult(pos, posm)]) for w, pos, (wm, posm) in zip(wembed, posembed, emb_masks)] if self.options.use_pos\
+                inputs = [dy.concatenate([dy.cmult(w, wm), dy.cmult(pos, posm), lng_e]) for w, pos, lng_e, (wm, posm) in zip(wembed, posembed, lang_embeds, emb_masks)] if self.options.use_pos\
                     else [dy.cmult(w, wm) for w, wm in zip(wembed, emb_masks)]
                 inputs = [dy.tanh(self.proj_mat[lang].expr() * inp) for inp in inputs]
             all_inputs[l] = inputs
 
-        lstm_input = [dy.concatenate_to_batch([all_inputs[j][i] for j in range(len(all_inputs))]) for i in range(len(all_inputs[0]))]
+
+        lstm_input = [dy.concatenate_to_batch(l + [all_inputs[j][i] for j in range(len(all_inputs))]) for i in range(len(all_inputs[0]))]
         d = self.options.dropout
         return self.bi_rnn(lstm_input, lstm_input[0].dim()[1], d if train else 0, d if train else 0)
 

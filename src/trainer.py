@@ -15,6 +15,7 @@ if __name__ == '__main__':
     parser.add_option("--pe", type="int", dest="pe", default=100)
     parser.add_option("--ce", type="int", dest="ce", default=100)
     parser.add_option("--re", type="int", dest="re", default=25)
+    parser.add_option("--le", type="int", dest="le", help="language embedding", default=25)
     parser.add_option("--t", type="int", dest="t", default=50000)
     parser.add_option("--lr", type="float", dest="lr", default=0.002)
     parser.add_option("--beta1", type="float", dest="beta1", default=0.9)
@@ -91,6 +92,7 @@ if __name__ == '__main__':
                 clookup_params[lang] = network.clookup[lang].expr().npvalue()
 
             plookup_params = network.plookup.expr().npvalue()
+            lang_lookup_params = network.lang_lookup.expr().npvalue()
 
-            pickle.dump((data.chars, options, deep_lstm_params, char_lstm_params, clookup_params,
-                         proj_mat_params, plookup_params), paramsfp)
+            pickle.dump((data.chars, network.lang2id, options, deep_lstm_params, char_lstm_params, clookup_params,
+                         proj_mat_params, plookup_params, lang_lookup_params), paramsfp)
