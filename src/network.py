@@ -114,8 +114,8 @@ class Network:
             char_bckd = self.char_lstm[lang].builder_layers[0][1].initial_state().transduce(reversed(cembed))[-1]
             crnns = dy.reshape(dy.concatenate_cols([char_fwd, char_bckd]), (self.options.we, chars[lang].shape[1]))
             cnn_reps = [list() for _ in range(len(words[lang]))]
-            for i in range(len(words[lang])):
-                cnn_reps[i] = dy.pick_batch(crnns, [j * words[lang].shape[0] + i for j in range(words[lang].shape[1])], 1)
+            for i in range(words[lang].shape[0]):
+                cnn_reps[i] = dy.pick_batch(crnns, [i * words[lang].shape[1] + j for j in range(words[lang].shape[1])], 1)
             wembed = [dy.lookup_batch(self.elookup, words[lang][i]) + cnn_reps[i] for i in range(len(words[lang]))]
             posembed = [dy.lookup_batch(self.plookup, pos_tags[lang][i]) for i in range(len(pos_tags[lang]))] if self.options.use_pos else None
 

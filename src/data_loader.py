@@ -152,12 +152,18 @@ class Data:
         langs = [all_batches[i][2] for i in range(len(all_batches))]
         chars, pwords, pos = dict(), dict(), dict()
         for lang_id in batch.keys():
-            chars[lang_id] = np.array([[[model.chars[lang_id].get(batch[lang_id][i][0][j][c].lower(), 0)
-                                         if 0 < j < len(batch[lang_id][i][0]) and c < len(
-                batch[lang_id][i][0][j]) else (1 if j == 0 and c == 0 else 0)
-                                         for i in range(len(batch[lang_id]))] for j in range(cur_len)] for
-                                       c in range(max_c_len)])
-            chars[lang_id] = np.transpose(np.reshape(chars[lang_id], (len(batch[lang_id]) * cur_len, max_c_len)))
+            chars_ = [list() for _ in range(max_c_len)]
+            for c_pos in range(cur_c_len):
+                ch = [model.PAD] * (len(batch[lang_id]) * cur_len)
+                offset = 0
+                for w_pos in range(cur_len):
+                    for sen_position in range(len(batch[lang_id])):
+                        if w_pos < len(batch[lang_id][sen_position]) and c_pos < len(batch[lang_id][sen_position][w_pos].norm):
+                            ch[offset] = model.chars.get(batch[lang_id][sen_position][w_pos].norm[c_pos], 0)
+                        offset += 1
+                chars_[c_pos] = np.array(ch)
+            chars_ = np.array(chars_)
+            chars[lang_id] = chars_
             pwords[lang_id] = np.array([np.array(
                 [model.evocab[langs[i]].get(batch[lang_id][i][0][j], 0) if j < len(batch[lang_id][i][0]) else model.PAD
                  for i in
