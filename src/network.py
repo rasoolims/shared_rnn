@@ -134,7 +134,7 @@ class Network:
             all_inputs[l] = inputs
 
 
-        lstm_input = [dy.concatenate_to_batch(l + [all_inputs[j][i] for j in range(len(all_inputs))]) for i in range(len(all_inputs[0]))]
+        lstm_input = [dy.concatenate_to_batch([all_inputs[j][i] for j in range(len(all_inputs))]) for i in range(len(all_inputs[0]))]
         d = self.options.dropout
         return self.bi_rnn(lstm_input, lstm_input[0].dim()[1], d if train else 0, d if train else 0)
 
