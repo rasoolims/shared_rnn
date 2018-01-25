@@ -62,7 +62,7 @@ class Data:
         self.langs = list(self.langs)
         print 'Object data is completely loaded!', len(self.de2dict), len(self.de2dict_dev)
 
-    def get_next(self, num_langs=3):
+    def get_next(self, num_langs=3, neg_num = 1):
         l = len(self.neg_examples['de'])
         r = random.randint(0, l-1)
         de_sen = self.neg_examples['de'][r]
@@ -95,7 +95,7 @@ class Data:
                     print pr[0]
                     assert len(neg_examples_)>0
                 len_ = len(neg_examples_)
-                i_ = [random.randint(1, len_ - 1) for _ in range(5)]
+                i_ = [random.randint(1, len_ - 1) for _ in range(neg_num)]
                 neg_sens = neg_sens + [neg_examples_[ind] for ind in i_]
                 neg_ids = neg_ids + [pr[0] for _ in i_]
         neg_output = []
@@ -123,10 +123,10 @@ class Data:
                 batch[lang_id].append((words, tags, lang_id, 1))
             yield self.get_minibatch(batch, c_len, w_len, model)
 
-    def get_next_batch(self, model, num_langs):
+    def get_next_batch(self, model, num_langs, neg_num):
         lines = None
         while lines is None:
-            output = self.get_next(num_langs)
+            output = self.get_next(num_langs, neg_num)
             if output:
                 lines = output.strip().split('\n')
         spl = lines[0].strip().split('\t')
