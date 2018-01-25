@@ -19,7 +19,7 @@ if __name__ == '__main__':
     parser.add_option("--t", type="int", dest="t", default=50000)
     parser.add_option("--lr", type="float", dest="lr", default=0.002)
     parser.add_option("--num_lang", type="int", dest="num_lang", help="number of languages per training instance", default=4)
-    parser.add_option("--neg_num", type="int", dest="neg_num", help="number of negative example per language", default=1)
+    parser.add_option("--neg_num", type="int", dest="neg_num", help="number of negative example per language", default=5)
     parser.add_option("--beta1", type="float", dest="beta1", default=0.9)
     parser.add_option("--beta2", type="float", dest="beta2", default=0.9)
     parser.add_option("--dropout", type="float", dest="dropout", default=0.33)
