@@ -164,7 +164,7 @@ class Network:
         if len(loss_values)>0:
             err = dy.esum(loss_values) / len(loss_values)
             err.forward()
-            err_value = err.value()
+            err_value = -err.value()
             err.backward()
             self.trainer.update()
         dy.renew_cg()
