@@ -13,6 +13,43 @@ def eval():
     return dev_perf
 
 
+def save(path):
+    with open(path, 'w') as paramsfp:
+        deep_lstm_params = []
+        for i in range(len(network.deep_lstms.builder_layers)):
+            builder = network.deep_lstms.builder_layers[i]
+            params = builder[0].get_parameters()[0] + builder[1].get_parameters()[0]
+            d_par = dict()
+            for j in range(len(params)):
+                d_par[j] = params[j].expr().npvalue()
+            deep_lstm_params.append(d_par)
+
+        char_lstm_params = dict()
+        for lang in network.char_lstm.keys():
+            char_lstm_params[lang] = []
+            for i in range(len(network.char_lstm[lang].builder_layers)):
+                builder = network.char_lstm[lang].builder_layers[i]
+                params = builder[0].get_parameters()[0] + builder[1].get_parameters()[0]
+                d_par = dict()
+                for j in range(len(params)):
+                    d_par[j] = params[j].expr().npvalue()
+                char_lstm_params[lang].append(d_par)
+
+        proj_mat_params = dict()
+        for lang in network.proj_mat.keys():
+            proj_mat_params[lang] = network.proj_mat[lang].expr().npvalue()
+
+        clookup_params = dict()
+        for lang in network.clookup.keys():
+            clookup_params[lang] = network.clookup[lang].expr().npvalue()
+
+        plookup_params = network.plookup.expr().npvalue()
+        lang_lookup_params = network.lang_lookup.expr().npvalue()
+
+        pickle.dump((data.chars, network.lang2id, options, deep_lstm_params, char_lstm_params, clookup_params,
+                     proj_mat_params, plookup_params, lang_lookup_params), paramsfp)
+
+
 if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option("--train", dest="train_data",  metavar="FILE", default=None)
@@ -53,13 +90,15 @@ if __name__ == '__main__':
     network = Network(universal_tags, data.chars, options)
     print 'splitting train data'
     print 'starting epochs'
+    best_performance =  eval()
+    print 'dev sim:', best_performance
     for e in range(10):
         print 'epochs', (e+1)
         errors = []
         progress = 0
         train_len = len(data.de2dict)
         start = time.time()
-        print 'dev sim:', eval()
+
 
         for i in range(train_len):
             minibatch = data.get_next_batch(network, options.num_lang, options.neg_num)
@@ -69,41 +108,17 @@ if __name__ == '__main__':
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
                 start = time.time()
                 errors = []
-            if (i+1) % 1000 == 0:
-                print 'dev sim:', eval()
+            if (i+1) % 10000 == 0:
+                dev_perform = eval()
+                print 'dev sim:', dev_perform
+                if dev_perform < best_performance:
+                    best_performance = dev_perform
+                    print 'saving', best_performance
+                    save(os.path.join(options.output,"model"))
 
-        print 'dev sim:', eval()
-        with open(os.path.join(options.output, "params.pickle."+str(e+1)), 'w') as paramsfp:
-            deep_lstm_params = []
-            for i in range(len(network.deep_lstms.builder_layers)):
-                builder = network.deep_lstms.builder_layers[i]
-                params = builder[0].get_parameters()[0] + builder[1].get_parameters()[0]
-                d_par = dict()
-                for j in range(len(params)):
-                    d_par[j] = params[j].expr().npvalue()
-                deep_lstm_params.append(d_par)
-
-            char_lstm_params = dict()
-            for lang in network.char_lstm.keys():
-                char_lstm_params[lang] = []
-                for i in range(len(network.char_lstm[lang].builder_layers)):
-                    builder = network.char_lstm[lang].builder_layers[i]
-                    params = builder[0].get_parameters()[0] + builder[1].get_parameters()[0]
-                    d_par = dict()
-                    for j in range(len(params)):
-                        d_par[j] = params[j].expr().npvalue()
-                    char_lstm_params[lang].append(d_par)
-
-            proj_mat_params = dict()
-            for lang in network.proj_mat.keys():
-                proj_mat_params[lang] = network.proj_mat[lang].expr().npvalue()
-
-            clookup_params = dict()
-            for lang in network.clookup.keys():
-                clookup_params[lang] = network.clookup[lang].expr().npvalue()
-
-            plookup_params = network.plookup.expr().npvalue()
-            lang_lookup_params = network.lang_lookup.expr().npvalue()
-
-            pickle.dump((data.chars, network.lang2id, options, deep_lstm_params, char_lstm_params, clookup_params,
-                         proj_mat_params, plookup_params, lang_lookup_params), paramsfp)
+        dev_perform = eval()
+        print 'dev sim:', dev_perform
+        if dev_perform < best_performance:
+            best_performance = dev_perform
+            print 'saving', best_performance
+            save(os.path.join(options.output, "model"))
