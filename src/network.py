@@ -154,13 +154,13 @@ class Network:
         for i in range(len(langs)):
             for j in range(i + 1, len(langs)):
                 if (langs[i] != langs[j]) and (signs[i] == 1 or signs[j] == 1):
-                    lu = dy.sqrt(dy.squared_distance(t_out[i], t_out[j]))
-                    ls = - dy.log(dy.exp(lu) + kq)
+                    lu = -dy.sqrt(dy.squared_distance(t_out[i], t_out[j]))
+                    denom = dy.log(dy.exp(lu) + kq)
                     if signs[i] == signs[j]:  # both one
-                        ls += lu
+                        nom = lu
                     else:
-                        ls += lkq
-                    loss_values.append(-ls)
+                        nom = lkq
+                    loss_values.append(denom - nom)
         err_value = 0
         if len(loss_values)>0:
             err = dy.esum(loss_values) / len(loss_values)
