@@ -69,7 +69,7 @@ if __name__ == '__main__':
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
                 start = time.time()
                 errors = []
-            if (i+1)%1000==0:
+            if (i+1) % 1000 == 0:
                 print 'dev sim:', eval()
 
         print 'dev sim:', eval()
