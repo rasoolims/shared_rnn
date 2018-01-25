@@ -138,13 +138,6 @@ class Network:
         d = self.options.dropout
         return self.bi_rnn(lstm_input, lstm_input[0].dim()[1], d if train else 0, d if train else 0)
 
-
-    def norms(self, v):
-        norms = []
-        for i in range(v.dim()[0][0]):
-            norms.append(dy.squared_norm(v[i]))
-        return dy.concatenate(norms)
-
     def train(self, mini_batch, num_train):
         words, pos_tags, chars, langs, signs, masks = mini_batch
         # Getting the last hidden layer from BiLSTM.
