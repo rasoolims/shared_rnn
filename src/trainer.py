@@ -4,6 +4,15 @@ from utils import *
 import pickle, time, os, sys
 from data_loader import Data
 
+
+def eval():
+    global dev_batch
+    for dev_batch in data.get_dev_batches(network):
+        dev_perf += network.eval(dev_batch)
+    dev_perf /= len(data.de2dict_dev)
+    return dev_perf
+
+
 if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option("--train", dest="train_data",  metavar="FILE", default=None)
@@ -50,6 +59,8 @@ if __name__ == '__main__':
         progress = 0
         train_len = len(data.de2dict)
         start = time.time()
+        print 'dev sim:', eval()
+
         for i in range(train_len):
             minibatch = data.get_next_batch(network, options.num_lang, options.neg_num)
             errors.append(network.train(minibatch, train_len))
@@ -58,12 +69,10 @@ if __name__ == '__main__':
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
                 start = time.time()
                 errors = []
+            if (i+1)%1000==0:
+                print 'dev sim:', eval()
 
-        dev_perf = 0
-        for dev_batch in data.get_dev_batches(network):
-            dev_perf += network.eval(dev_batch)
-        dev_perf /= len(data.de2dict_dev)
-        print 'dev sim for iteration', e+1, 'is', dev_perf
+        print 'dev sim:', eval()
         with open(os.path.join(options.output, "params.pickle."+str(e+1)), 'w') as paramsfp:
             deep_lstm_params = []
             for i in range(len(network.deep_lstms.builder_layers)):
