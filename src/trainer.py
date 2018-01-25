@@ -6,7 +6,7 @@ from data_loader import Data
 
 
 def eval():
-    global dev_batch
+    dev_perf = 0
     for dev_batch in data.get_dev_batches(network):
         dev_perf += network.eval(dev_batch)
     dev_perf /= len(data.de2dict_dev)
