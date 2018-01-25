@@ -82,8 +82,10 @@ class Data:
             neg_sens = [neg_examples_[ind] for ind in i_]
             neg_ids = ['de' for _ in i_]
 
+        langs_used = set()
         for pr in self.de2dict[de_sen]:
-            if pr[0] in langs_to_use:
+            if (pr[0] in langs_to_use) and (not pr[0] in langs_used): # second condition for making sure we don't have two English negative examples.
+                langs_used.add(pr[0])
                 output.append(pr[0])
                 output.append(pr[1])
                 neg_examples_ = self.neg_examples[pr[0]]
