@@ -66,7 +66,9 @@ class Data:
         l = len(self.neg_examples['de'])
         r = random.randint(0, l-1)
         de_sen = self.neg_examples['de'][r]
-        langs_to_use = set([self.langs[random.randint(0, len(self.langs) - 1)] for _ in range(num_langs)])
+        langs_to_use = list(self.langs)
+        random.shuffle(langs_to_use)
+        langs_to_use = langs_to_use[:num_langs]
 
         output = []
         if 'de' in langs_to_use:

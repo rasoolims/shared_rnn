@@ -18,6 +18,7 @@ if __name__ == '__main__':
     parser.add_option("--le", type="int", dest="le", help="language embedding", default=25)
     parser.add_option("--t", type="int", dest="t", default=50000)
     parser.add_option("--lr", type="float", dest="lr", default=0.002)
+    parser.add_option("--num_lang", type="int", dest="num_lang", help="number of languages per training instance", default=4)
     parser.add_option("--beta1", type="float", dest="beta1", default=0.9)
     parser.add_option("--beta2", type="float", dest="beta2", default=0.9)
     parser.add_option("--dropout", type="float", dest="dropout", default=0.33)
@@ -49,7 +50,7 @@ if __name__ == '__main__':
         train_len = len(data.de2dict)
         start = time.time()
         for i in range(train_len):
-            minibatch = data.get_next_batch(network, 4)
+            minibatch = data.get_next_batch(network, options.num_lang)
             errors.append(network.train(minibatch, train_len))
             progress += 1
             if len(errors) >= 100:
