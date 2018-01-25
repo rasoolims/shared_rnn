@@ -138,7 +138,7 @@ class Network:
         d = self.options.dropout
         return self.bi_rnn(lstm_input, lstm_input[0].dim()[1], d if train else 0, d if train else 0)
 
-    def train(self, mini_batch, num_train):
+    def train(self, mini_batch, num_train, k):
         words, pos_tags, chars, langs, signs, masks = mini_batch
         # Getting the last hidden layer from BiLSTM.
         h_out = self.rnn_mlp(mini_batch, True)[-1]
@@ -146,8 +146,7 @@ class Network:
         t_out = dy.transpose(t_out_d)
 
         # Calculating the kq values for NCE.
-        k = float(t_out.dim()[0][0] - len(chars))
-        kq = dy.scalarInput(k / num_train)
+        kq = dy.scalarInput(float(k) / num_train)
         lkq = dy.log(kq)
 
         loss_values = []
