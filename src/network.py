@@ -93,7 +93,6 @@ class Network:
 
     def bi_rnn(self, inputs, batch_size=None, dropout_x=0., dropout_h=0.):
         num_layers = len(self.deep_lstms.builder_layers)
-        layer_num = 1
         for fb, bb in self.deep_lstms.builder_layers:
             f, b = fb.initial_state(), bb.initial_state()
             fb.set_dropouts(dropout_x, dropout_h)
@@ -102,11 +101,7 @@ class Network:
                 fb.set_dropout_masks(batch_size)
                 bb.set_dropout_masks(batch_size)
             fs, bs = f.transduce(inputs), b.transduce(reversed(inputs))
-            if layer_num == num_layers: # in case of the last layer, we want the first and last word (forward and backward).
-                inputs = [dy.concatenate([f, b]) for f, b in zip(fs, bs)]
-            else:
-                inputs = [dy.concatenate([f, b]) for f, b in zip(fs, reversed(bs))]
-            layer_num += 1
+            inputs = [dy.concatenate([f, b]) for f, b in zip(fs, reversed(bs))]
         return inputs
 
 
