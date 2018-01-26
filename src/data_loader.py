@@ -8,7 +8,6 @@ class Data:
         lang_sentences_set = defaultdict(set)
         self.langs = set()
         de2dict = defaultdict(list)
-        self.dev_dicts = []
         chars = defaultdict(set)
         print 'creating dictionaries'
         for flat_dir in os.listdir(bible_folder):
@@ -60,6 +59,21 @@ class Data:
         for l in chars.keys():
             self.chars[l] = sorted(list(chars[l]))
         self.langs = list(self.langs)
+
+        output_list = defaultdict(list)
+        for de_sen in self.de2dict_dev.keys():
+            output_list['de'].append(de_sen)
+            for pr in self.de2dict_dev[de_sen]:
+                output_list[pr[0]].append(pr[1])
+
+        self.shuffled_dict = dict()
+        num_sen = len(output_list['de'])
+        for i in range(num_sen):
+            self.shuffled_dict[output_list['de'][i]] = list()
+            for lang in output_list.keys():
+                if lang == 'de': continue
+                j = random.randint(0, len(output_list[lang]) - 1)
+                self.shuffled_dict[output_list['de'][i]].append((lang, output_list[lang][j]))
         print 'Object data is completely loaded!', len(self.de2dict), len(self.de2dict_dev)
 
     def get_next(self, num_langs=3, neg_num = 1):
@@ -107,10 +121,10 @@ class Data:
         if len(neg_output)>0:
             return '\t'.join(output)+'\n'+'\t'.join(neg_output)
 
-    def get_dev_batches(self, model):
-        for de_sen in self.de2dict_dev.keys():
+    def get_dev_batches(self, model, dev_dict):
+        for de_sen in dev_dict.keys():
             output = ['de', de_sen]
-            for pr in self.de2dict_dev[de_sen]:
+            for pr in dev_dict[de_sen]:
                 output.append(pr[0])
                 output.append(pr[1])
             batch = defaultdict(list)
@@ -122,6 +136,7 @@ class Data:
                 w_len = max(w_len, len(words))
                 batch[lang_id].append((words, tags, lang_id, 1))
             yield self.get_minibatch(batch, c_len, w_len, model)
+
 
     def get_next_batch(self, model, num_langs, neg_num):
         lines = None

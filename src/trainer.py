@@ -5,13 +5,12 @@ import pickle, time, os, sys
 from data_loader import Data
 
 
-def eval():
+def eval(batches):
     dev_perf = 0
-    for dev_batch in data.get_dev_batches(network):
+    for dev_batch in batches:
         dev_perf += network.eval(dev_batch)
     dev_perf /= len(data.de2dict_dev)
     return dev_perf
-
 
 def save(path):
     with open(path, 'w') as paramsfp:
@@ -90,8 +89,9 @@ if __name__ == '__main__':
     network = Network(universal_tags, data.chars, options)
     print 'splitting train data'
     print 'starting epochs'
-    best_performance =  eval()
-    print 'dev sim:', best_performance
+    best_performance =  eval(data.get_dev_batches(network, data.de2dict_dev))
+    random_performance = eval(data.get_dev_batches(network, data.shuffled_dict))
+    print 'dev sim/random:', best_performance, random_performance
     for e in range(10):
         print 'epochs', (e+1)
         errors = []
@@ -108,16 +108,17 @@ if __name__ == '__main__':
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
                 start = time.time()
                 errors = []
-            if (i+1) % 10000 == 0:
-                dev_perform = eval()
-                print 'dev sim:', dev_perform
+            if (i+1) % 100 == 0:
+                dev_perform = eval(data.get_dev_batches(network, data.de2dict_dev))
+                random_performance = eval(data.get_dev_batches(network, data.shuffled_dict))
+                print 'dev sim:', dev_perform, random_performance
                 if dev_perform < best_performance:
                     best_performance = dev_perform
                     print 'saving', best_performance
                     save(os.path.join(options.output,"model"))
 
-        dev_perform = eval()
-        print 'dev sim:', dev_perform
+        random_performance = eval(data.get_dev_batches(network, data.shuffled_dict))
+        print 'dev sim:', dev_perform, random_performance
         if dev_perform < best_performance:
             best_performance = dev_perform
             print 'saving', best_performance
