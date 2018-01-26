@@ -41,12 +41,14 @@ class Data:
                     l2, sen = lsenPair
                     lang_sentences_set['de'].add(de_sen)
                     words, tags = get_words_tags(de_sen)
-                    for ch in words:
-                        chars['de'].add(ch)
+                    for word in words:
+                        for ch in word:
+                            chars['de'].add(ch)
                     lang_sentences_set[l2].add(sen)
                     words, tags = get_words_tags(sen)
-                    for ch in words:
-                        chars[l2].add(ch)
+                    for word in words:
+                        for ch in word:
+                            chars[l2].add(ch)
             else:
                 self.de2dict_dev[de_sen] = de2dict[de_sen]
 
