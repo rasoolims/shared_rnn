@@ -92,7 +92,6 @@ class Network:
         self.model.populate(filename)
 
     def bi_rnn(self, inputs, batch_size=None, dropout_x=0., dropout_h=0.):
-        num_layers = len(self.deep_lstms.builder_layers)
         for fb, bb in self.deep_lstms.builder_layers:
             f, b = fb.initial_state(), bb.initial_state()
             fb.set_dropouts(dropout_x, dropout_h)
