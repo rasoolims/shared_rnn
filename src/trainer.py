@@ -89,8 +89,10 @@ if __name__ == '__main__':
     network = Network(universal_tags, data.chars, options)
     print 'splitting train data'
     print 'starting epochs'
-    best_performance =  eval(data.get_dev_batches(network, data.de2dict_dev))
-    random_performance = eval(data.get_dev_batches(network, data.shuffled_dict))
+    dev_batches = data.get_dev_batches(network, data.de2dict_dev)
+    dev_noise_batches = data.get_dev_batches(network, data.shuffled_dict)
+    best_performance =  eval(dev_batches)
+    random_performance = eval(dev_noise_batches)
     print 'dev sim/random:', best_performance, random_performance
     for e in range(10):
         print 'epochs', (e+1)
@@ -109,15 +111,16 @@ if __name__ == '__main__':
                 start = time.time()
                 errors = []
             if (i+1) % 500 == 0:
-                dev_perform = eval(data.get_dev_batches(network, data.de2dict_dev))
-                random_performance = eval(data.get_dev_batches(network, data.shuffled_dict))
+                dev_perform = eval(dev_batches)
+                random_performance = eval(dev_noise_batches)
                 print 'dev sim:', dev_perform, random_performance
                 if dev_perform < best_performance:
                     best_performance = dev_perform
                     print 'saving', best_performance
                     save(os.path.join(options.output,"model"))
 
-        random_performance = eval(data.get_dev_batches(network, data.shuffled_dict))
+        dev_perform = eval(dev_batches)
+        random_performance = eval(dev_noise_batches)
         print 'dev sim:', dev_perform, random_performance
         if dev_perform < best_performance:
             best_performance = dev_perform
