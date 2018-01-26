@@ -4,7 +4,6 @@ import os,sys,math
 from linalg import *
 reload(sys)
 sys.setdefaultencoding('utf8')
-from collections import defaultdict
 
 class Network:
     def __init__(self, pos, chars, options):
@@ -152,26 +151,16 @@ class Network:
 
         loss_values = []
         for i in range(len(langs)):
-            ith_scores, ith_gold, it = defaultdict(list), defaultdict(int), defaultdict(int)
             for j in range(i + 1, len(langs)):
                 if (langs[i] != langs[j]) and (signs[i] == 1 or signs[j] == 1):
                     lu = -dy.squared_distance(t_out[i], t_out[j])
-                    ith_scores[langs[j]].append(lu)
-                    # s_ = dy.concatenate([lu, kq])
-                    #denom = dy.log(dy.exp(lu) + kq)
+                    denom = dy.log(dy.exp(lu) + kq)
                     if signs[i] == signs[j]:  # both one
-                        ith_gold[langs[j]] = it[langs[j]]
-                        # loss_values.append(dy.pickneglogsoftmax(s_, 0))
-                        #nom = lu
-                    #else:
-                        # loss_values.append(dy.pickneglogsoftmax(s_, 1))
-                        #nom = lkq
-                    it[langs[j]] +=1
-                    #loss_values.append(denom - nom)
-            scores = [dy.concatenate(ith_scores[lang]) for lang in ith_scores.keys()]
-            golds = [ith_gold[lang] for lang in ith_scores.keys()]
-            for g in range(len(golds)):
-                loss_values.append(dy.pickneglogsoftmax(scores[g], golds[g]))
+                        nom = lu
+                    else:
+                        nom = lkq
+                    loss_values.append(denom - nom)
+
         err_value = 0
         if len(loss_values)>0:
             err = dy.esum(loss_values) / len(loss_values)
