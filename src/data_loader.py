@@ -122,6 +122,7 @@ class Data:
             return '\t'.join(output)+'\n'+'\t'.join(neg_output)
 
     def get_dev_batches(self, model, dev_dict):
+        dev_batches = list()
         for de_sen in dev_dict.keys():
             output = ['de', de_sen]
             for pr in dev_dict[de_sen]:
@@ -135,7 +136,8 @@ class Data:
                 c_len[lang_id] = max(c_len[lang_id], max([len(w) for w in words]))
                 w_len = max(w_len, len(words))
                 batch[lang_id].append((words, tags, lang_id, 1))
-            yield self.get_minibatch(batch, c_len, w_len, model)
+            dev_batches.append(self.get_minibatch(batch, c_len, w_len, model))
+        return dev_batches
 
 
     def get_next_batch(self, model, num_langs, neg_num):
