@@ -108,7 +108,7 @@ if __name__ == '__main__':
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
                 start = time.time()
                 errors = []
-            if (i+1) % 100 == 0:
+            if (i+1) % 10000 == 0:
                 dev_perform = eval(data.get_dev_batches(network, data.de2dict_dev))
                 random_performance = eval(data.get_dev_batches(network, data.shuffled_dict))
                 print 'dev sim:', dev_perform, random_performance
