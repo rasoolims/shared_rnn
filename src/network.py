@@ -92,6 +92,8 @@ class Network:
         self.model.populate(filename)
 
     def bi_rnn(self, inputs, batch_size=None, dropout_x=0., dropout_h=0.):
+        num_layers = len(self.deep_lstms.builder_layers)
+        layer_num = 1
         for fb, bb in self.deep_lstms.builder_layers:
             f, b = fb.initial_state(), bb.initial_state()
             fb.set_dropouts(dropout_x, dropout_h)
@@ -100,7 +102,11 @@ class Network:
                 fb.set_dropout_masks(batch_size)
                 bb.set_dropout_masks(batch_size)
             fs, bs = f.transduce(inputs), b.transduce(reversed(inputs))
-            inputs = [dy.concatenate([f, b]) for f, b in zip(fs, reversed(bs))]
+            if layer_num == num_layers: # in case of the last layer, we want the first and last word (forward and backward).
+                inputs = [dy.concatenate([f, b]) for f, b in zip(fs, bs)]
+            else:
+                inputs = [dy.concatenate([f, b]) for f, b in zip(fs, reversed(bs))]
+            layer_num += 1
         return inputs
 
 
@@ -141,7 +147,8 @@ class Network:
     def train(self, mini_batch, num_train, k):
         words, pos_tags, chars, langs, signs, masks = mini_batch
         # Getting the last hidden layer from BiLSTM.
-        h_out = self.rnn_mlp(mini_batch, True)[-1]
+        rnn_out = self.rnn_mlp(mini_batch, True)
+        h_out = rnn_out[-1]
         t_out_d = dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1]))
         t_out = dy.transpose(t_out_d)
 
