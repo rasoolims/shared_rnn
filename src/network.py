@@ -159,12 +159,12 @@ class Network:
                         nom = lu
                     else:
                         nom = lkq
-                    loss_values.append(- denom + nom)
+                    loss_values.append(denom - nom)
         err_value = 0
         if len(loss_values)>0:
             err = dy.esum(loss_values) / len(loss_values)
             err.forward()
-            err_value = -err.value()
+            err_value = err.value()
             err.backward()
             self.trainer.update()
         dy.renew_cg()
