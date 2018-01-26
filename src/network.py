@@ -151,15 +151,24 @@ class Network:
 
         loss_values = []
         for i in range(len(langs)):
+            ith_scores, ith_gold, it = [], 0, 0
             for j in range(i + 1, len(langs)):
                 if (langs[i] != langs[j]) and (signs[i] == 1 or signs[j] == 1):
                     lu = -dy.squared_distance(t_out[i], t_out[j])
-                    denom = dy.log(dy.exp(lu) + kq)
+                    ith_scores.append(lu)
+                    # s_ = dy.concatenate([lu, kq])
+                    #denom = dy.log(dy.exp(lu) + kq)
                     if signs[i] == signs[j]:  # both one
-                        nom = lu
-                    else:
-                        nom = lkq
-                    loss_values.append(denom - nom)
+                        ith_gold = it
+                        # loss_values.append(dy.pickneglogsoftmax(s_, 0))
+                        #nom = lu
+                    #else:
+                        # loss_values.append(dy.pickneglogsoftmax(s_, 1))
+                        #nom = lkq
+                    it+=1
+                    #loss_values.append(denom - nom)
+            scores = dy.concatenate(ith_scores)
+            loss_values.append(dy.pickneglogsoftmax(scores, ith_gold))
         err_value = 0
         if len(loss_values)>0:
             err = dy.esum(loss_values) / len(loss_values)
