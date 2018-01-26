@@ -160,7 +160,7 @@ class Network:
                     # s_ = dy.concatenate([lu, kq])
                     #denom = dy.log(dy.exp(lu) + kq)
                     if signs[i] == signs[j]:  # both one
-                        ith_gold[langs[j]] = it
+                        ith_gold[langs[j]] = it[langs[j]]
                         # loss_values.append(dy.pickneglogsoftmax(s_, 0))
                         #nom = lu
                     #else:

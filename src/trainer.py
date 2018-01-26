@@ -92,7 +92,7 @@ if __name__ == '__main__':
     dev_batches = data.get_dev_batches(network, data.de2dict_dev)
     dev_noise_batches = data.get_dev_batches(network, data.shuffled_dict)
     print 'loaded dev+noise batches'
-    
+
     best_performance =  eval(dev_batches)
     random_performance = eval(dev_noise_batches)
     print 'dev sim/random:', best_performance, random_performance
