@@ -84,18 +84,16 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
     print 'loading chars'
-    data = Data(options.train_data)
     universal_tags = ['ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM', 'PART', 'PRON', 'PROPN', 'PUNCT', 'SCONJ', 'SYM', 'VERB', 'X']
+    data = Data(options.train_data, universal_tags)
     network = Network(universal_tags, data.chars, options)
     print 'splitting train data'
     print 'starting epochs'
     dev_batches = data.get_dev_batches(network, data.de2dict_dev)
-    dev_noise_batches = data.get_dev_batches(network, data.shuffled_dict)
     print 'loaded dev+noise batches'
 
     best_performance =  eval(dev_batches)
-    random_performance = eval(dev_noise_batches)
-    print 'dev sim/random:', best_performance, random_performance
+    print 'dev sim/random:', best_performance
     for e in range(10):
         print 'epochs', (e+1)
         errors = []
@@ -114,16 +112,14 @@ if __name__ == '__main__':
                 errors = []
             if (i+1) % 500 == 0:
                 dev_perform = eval(dev_batches)
-                random_performance = eval(dev_noise_batches)
-                print 'dev sim:', dev_perform, random_performance
+                print 'dev sim:', dev_perform
                 if dev_perform < best_performance:
                     best_performance = dev_perform
                     print 'saving', best_performance
                     save(os.path.join(options.output,"model"))
 
         dev_perform = eval(dev_batches)
-        random_performance = eval(dev_noise_batches)
-        print 'dev sim:', dev_perform, random_performance
+        print 'dev sim:', dev_perform
         if dev_perform < best_performance:
             best_performance = dev_perform
             print 'saving', best_performance

@@ -4,8 +4,9 @@ import numpy as np
 from utils import *
 
 class Data:
-    def __init__(self, bible_folder):
-        lang_sentences_set = defaultdict(set)
+    def __init__(self, bible_folder, pos_tags):
+        self.pos_tags = pos_tags
+        lang_word_set = defaultdict(set)
         self.langs = set()
         de2dict = defaultdict(list)
         chars = defaultdict(set)
@@ -24,13 +25,15 @@ class Data:
             print f
             l1_tag = f + 'corpus.tok.clean.' + l1 + '.conll.tag'
             l2_tag = f + 'corpus.tok.clean.' + l2 + '.conll.tag'
-
+            intesect_file = f + l1 + '_' + l2 +'.intersect'
             src_sens = codecs.open(l1_tag, 'r').read().strip().split('\n')
             dst_sens = codecs.open(l2_tag, 'r').read().strip().split('\n')
+            intersections = open(intesect_file, 'r').read().strip().split('\n')
 
-            assert len(src_sens) == len(dst_sens)
+            assert len(src_sens) == len(dst_sens) == len(intersections)
             for i in range(len(src_sens)):
-                de2dict[normalize_sent(src_sens[i])].append((l2, normalize_sent(dst_sens[i])))
+                isct = [[int(spl) for spl in spls.split('-')] for spls in intersections[i].strip().split()]
+                de2dict[normalize_sent(src_sens[i])].append((l2, normalize_sent(dst_sens[i]), isct))
 
         self.de2dict, self.de2dict_dev = dict(), dict()
 
@@ -38,42 +41,29 @@ class Data:
             if random.randint(0, 99) != 99:
                 self.de2dict[de_sen] = de2dict[de_sen]
                 for lsenPair in de2dict[de_sen]:
-                    l2, sen = lsenPair
-                    lang_sentences_set['de'].add(de_sen)
-                    words, tags = get_words_tags(de_sen)
-                    for ch in words:
-                        chars['de'].add(ch)
-                    lang_sentences_set[l2].add(sen)
+                    l2, sen, _ = lsenPair
+                    words, _ = get_words_tags(de_sen)
+                    for word in words:
+                        lang_word_set['de'].add(word)
                     words, tags = get_words_tags(sen)
-                    for ch in words:
-                        chars[l2].add(ch)
+                    for word in words:
+                        lang_word_set[l2].add(word)
             else:
                 self.de2dict_dev[de_sen] = de2dict[de_sen]
 
         self.neg_examples = defaultdict(list)
-        for lang in lang_sentences_set.keys():
-            self.neg_examples[lang] = list(lang_sentences_set[lang])
+        for lang in lang_word_set.keys():
+            self.neg_examples[lang] = list(lang_word_set[lang])
             print lang, len(self.neg_examples[lang])
+            for word in self.neg_examples[lang]:
+                for c in list(word):
+                    chars[lang].add(c)
 
         self.chars = dict()
         for l in chars.keys():
             self.chars[l] = sorted(list(chars[l]))
         self.langs = list(self.langs)
 
-        output_list = defaultdict(list)
-        for de_sen in self.de2dict_dev.keys():
-            output_list['de'].append(de_sen)
-            for pr in self.de2dict_dev[de_sen]:
-                output_list[pr[0]].append(pr[1])
-
-        self.shuffled_dict = dict()
-        num_sen = len(output_list['de'])
-        for i in range(num_sen):
-            self.shuffled_dict[output_list['de'][i]] = list()
-            for lang in output_list.keys():
-                if lang == 'de': continue
-                j = random.randint(0, len(output_list[lang]) - 1)
-                self.shuffled_dict[output_list['de'][i]].append((lang, output_list[lang][j]))
         print 'Object data is completely loaded!', len(self.de2dict), len(self.de2dict_dev)
 
     def get_next(self, num_langs=3, neg_num = 1):

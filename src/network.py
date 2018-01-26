@@ -18,7 +18,6 @@ class Network:
         edim = options.we
         self.cut_value = lambda x: dy.bmin(0.0001 * x, x)
 
-        lang_set = {'de', 'en', 'es'}
         self.chars = dict()
         self.evocab = dict()
         self.clookup = dict()
