@@ -4,10 +4,9 @@ import numpy as np
 from utils import *
 
 class AlignmentInstance:
-    def __init__(self, src_lang, dst_lang, src_words, src_tags, dst_words, dst_tags, align_line):
+    def __init__(self, src_lang, dst_lang, src_sen_id, dst_sen_id, align_line):
         self.src_lang, self.dst_lang = src_lang, dst_lang
-        self.src_words, self.src_tags = src_words, src_tags
-        self.dst_words, self.dst_tags = dst_words, dst_tags
+        self.src_id, self.dst_id = src_sen_id, dst_sen_id
         self.alignment = [[int(spl) for spl in spls.split('-')] for spls in align_line.strip().split()]
 
 
@@ -20,6 +19,8 @@ class Data:
         print 'creating dictionaries'
 
         self.alignments, self.dev_alignments = list(), list()
+        self.lang_unique_sentence_list = defaultdict(list)
+        lang_unique_sentence_set = defaultdict(dict)
 
         for flat_dir in os.listdir(bible_folder):
             l1 = flat_dir[:flat_dir.rfind('_')]
@@ -37,9 +38,18 @@ class Data:
 
             assert len(src_sens) == len(dst_sens) == len(intersections)
             for i in range(len(src_sens)):
-                src_words, src_tags = get_words_tags(normalize_sent(src_sens[i]))
-                dst_words, dst_tags = get_words_tags(normalize_sent(dst_sens[i]))
-                alignment = AlignmentInstance(l1, l2, src_words, src_tags, dst_words, dst_tags, intersections[i])
+                src_sen, dst_sen = normalize_sent(src_sens[i]), normalize_sent(dst_sens[i])
+                if not src_sen in lang_unique_sentence_set[l1]:
+                    lang_unique_sentence_set[l1][src_sen] = len(self.lang_unique_sentence_list[l1])
+                    src_words, src_tags = get_words_tags(src_sen)
+                    self.lang_unique_sentence_list[l1].append((src_words, src_tags))
+                if not dst_sen in lang_unique_sentence_set[l2]:
+                    lang_unique_sentence_set[l2][dst_sen] = len(self.lang_unique_sentence_list[l2])
+                    dst_words, dst_tags = get_words_tags(dst_sen)
+                    self.lang_unique_sentence_list[l2].append((dst_words, dst_tags))
+
+                src_sen_id, dst_sen_id = lang_unique_sentence_set[l1][src_sen], lang_unique_sentence_set[l2][dst_sen]
+                alignment = AlignmentInstance(l1, l2, src_sen_id, dst_sen_id, intersections[i])
                 if random.randint(0, 99) != 99:
                     self.alignments.append(alignment)
                     for word in src_words:
@@ -55,7 +65,7 @@ class Data:
             for word in self.neg_examples[lang]:
                 for c in list(word):
                     chars[lang].add(c)
-            print lang, len(self.neg_examples[lang]), len(chars[lang])
+            print lang, len(self.neg_examples[lang]), len(chars[lang]), len(self.lang_unique_sentence_list[lang])
 
         self.chars = dict()
         for l in chars.keys():
@@ -72,12 +82,12 @@ class Data:
             random_instance = self.alignments[random.randint(0, len(self.alignments)-1)]
             random_alignment_instance = random_instance.alignment[random.randint(0, len(random_instance.alignment)-1)]
             src_position, dst_position = random_alignment_instance
-            src_words, dst_words = random_instance.src_words, random_instance.dst_words
-            w_len = max(w_len, max(len(src_words), len(dst_words)))
-            src_tags, dst_tags = random_instance.src_tags, random_instance.dst_tags
             src_lang, dst_lang = random_instance.src_lang, random_instance.dst_lang
-            c_len[src_lang] = max(c_len[src_lang], max([len(w) for w in random_instance.src_words]))
-            c_len[dst_lang] = max(c_len[dst_lang], max([len(w) for w in random_instance.dst_words]))
+            src_words, src_tags = self.lang_unique_sentence_list[src_lang][random_instance.src_id]
+            dst_words, dst_tags = self.lang_unique_sentence_list[dst_lang][random_instance.dst_id]
+            w_len = max(w_len, max(len(src_words), len(dst_words)))
+            c_len[src_lang] = max(c_len[src_lang], max([len(w) for w in src_words]))
+            c_len[dst_lang] = max(c_len[dst_lang], max([len(w) for w in dst_words]))
             batch[src_lang].append((src_words, src_tags, src_lang, 1, src_position, b))
             batch[dst_lang].append((dst_words, dst_tags, dst_lang, 1, dst_position, b))
             for r in range(neg_num):
