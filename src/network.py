@@ -107,7 +107,7 @@ class Network:
         '''
         Here, I assumed all sens have the same length.
         '''
-        words, pos_tags, chars, langs, signs, masks = batch
+        words, pos_tags, chars, langs, signs, positions, batch_num, char_batches, masks = batch
 
         all_inputs = [0]*len(chars.keys())
         for l, lang in enumerate(chars.keys()):
@@ -117,7 +117,7 @@ class Network:
             crnns = dy.reshape(dy.concatenate_cols([char_fwd, char_bckd]), (self.options.we, chars[lang].shape[1]))
             cnn_reps = [list() for _ in range(len(words[lang]))]
             for i in range(words[lang].shape[0]):
-                cnn_reps[i] = dy.pick_batch(crnns, [i * words[lang].shape[1] + j for j in range(words[lang].shape[1])], 1)
+                cnn_reps[i] = dy.pick_batch(crnns, [char_batches[lang][j][i] for j in range(words[lang].shape[1])], 1)
             wembed = [dy.lookup_batch(self.elookup, words[lang][i]) + cnn_reps[i] for i in range(len(words[lang]))]
             posembed = [dy.lookup_batch(self.plookup, pos_tags[lang][i]) for i in range(len(pos_tags[lang]))] if self.options.use_pos else None
             lang_embeds = [dy.lookup_batch(self.lang_lookup, [self.lang2id[lang]]*len(pos_tags[lang][i])) for i in range(len(pos_tags[lang]))]
@@ -138,28 +138,37 @@ class Network:
         return self.bi_rnn(lstm_input, lstm_input[0].dim()[1], d if train else 0, d if train else 0)
 
     def train(self, mini_batch, num_train, k):
-        words, pos_tags, chars, langs, signs, masks = mini_batch
+        pwords, pos_tags, chars, langs, signs, positions, batch_num, char_batches, masks = mini_batch
         # Getting the last hidden layer from BiLSTM.
         rnn_out = self.rnn_mlp(mini_batch, True)
-        h_out = rnn_out[-1]
-        t_out_d = dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1]))
-        t_out = dy.transpose(t_out_d)
+        t_out_ds = [dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1])) for h_out in rnn_out]
+        t_outs = [dy.transpose(t_out_d) for t_out_d in t_out_ds]
 
         # Calculating the kq values for NCE.
         kq = dy.scalarInput(float(k) / num_train)
         lkq = dy.log(kq)
-
         loss_values = []
-        for i in range(len(langs)):
-            for j in range(i + 1, len(langs)):
-                if (langs[i] != langs[j]) and (signs[i] == 1 or signs[j] == 1):
-                    lu = -dy.squared_distance(t_out[i], t_out[j])
-                    denom = dy.log(dy.exp(lu) + kq)
-                    if signs[i] == signs[j]:  # both one
-                        nom = lu
-                    else:
-                        nom = lkq
-                    loss_values.append(denom - nom)
+
+        for b in batch_num:
+            for i in range(len(batch_num[b])):
+                if signs[b][i] == 0: continue
+                lang1 = langs[b][i]
+                pos1 = positions[b][i]
+                b1 = batch_num[b][i]
+                vec1 = t_outs[pos1][b1]
+                for j in range(i+1, len(batch_num[b])):
+                    lang2 = langs[b][j]
+                    pos2 = positions[b][j]
+                    b2 = batch_num[b][j]
+                    if lang1 != lang2:
+                        vec2 = t_outs[pos2][b2]
+                        lu = -dy.squared_distance(vec1, vec2)
+                        denom = dy.log(dy.exp(lu) + kq)
+                        if signs[b][i] == signs[b][j]:  # both one
+                            nom = lu
+                        else:
+                            nom = lkq
+                        loss_values.append(denom - nom)
 
         err_value = 0
         if len(loss_values)>0:

@@ -117,21 +117,41 @@ class Data:
         all_batches = []
         for lang_id in batch.keys():
             all_batches += batch[lang_id]
-        signs = [all_batches[i][3] for i in range(len(all_batches))]
         langs = [all_batches[i][2] for i in range(len(all_batches))]
-        positions = [all_batches[i][4] for i in range(len(all_batches))] # alignment positions.
-        batch_num = [all_batches[i][5] for i in range(len(all_batches))] # batch id
+        batch_num, positions, signs, langs_in_batch = defaultdict(list), defaultdict(list), defaultdict(list), defaultdict(list)
+        for i in range(len(all_batches)):
+            batch_num[all_batches[i][5]].append(i)
+            positions[all_batches[i][5]].append(all_batches[i][4])
+            signs[all_batches[i][5]].append(all_batches[i][3])
+            langs_in_batch[all_batches[i][5]].append(all_batches[i][2])
         chars, pwords, pos = dict(), dict(), dict()
+        char_batches = dict()
+        uniq_words = dict()
+        for lang_id in batch.keys():
+            char_batches[lang_id] = dict()
+            uniq_words[lang_id] = list()
+            lang_words = dict()
+            for sen_position in range(len(batch[lang_id])):
+                char_batches[lang_id][sen_position] = dict()
+                for w_pos in range(cur_len):
+                    if w_pos < len(batch[lang_id][sen_position][0]):
+                        w = batch[lang_id][sen_position][0][w_pos]
+                    else:
+                        w = '<PAD>'
+                    if not w in lang_words:
+                        lang_words[w] = len(uniq_words[lang_id])
+                        uniq_words[lang_id].append(w)
+                    char_batches[lang_id][sen_position][w_pos] = lang_words[w]
+
         for lang_id in batch.keys():
             chars_ = [list() for _ in range(cur_c_len[lang_id])]
             for c_pos in range(cur_c_len[lang_id]):
-                ch = [model.PAD] * (len(batch[lang_id]) * cur_len)
+                ch = [model.PAD] * len(uniq_words[lang_id])
                 offset = 0
-                for w_pos in range(cur_len):
-                    for sen_position in range(len(batch[lang_id])):
-                        if w_pos < len(batch[lang_id][sen_position][0]) and c_pos < len(batch[lang_id][sen_position][0][w_pos]):
-                            ch[offset] = model.chars[lang_id].get(batch[lang_id][sen_position][0][w_pos][c_pos], 0)
-                        offset += 1
+                for w in uniq_words[lang_id]:
+                    if c_pos < len(w):
+                        ch[offset] = model.chars[lang_id].get(w[c_pos], 0)
+                    offset += 1
                 chars_[c_pos] = np.array(ch)
             chars[lang_id] = np.array(chars_)
             pwords[lang_id] = np.array([np.array(
@@ -143,5 +163,5 @@ class Data:
                  range(len(batch[lang_id]))]) for j in range(cur_len)])
         masks = np.array([np.array([1 if 0 < j < len(all_batches[i][0]) else 0 for i in range(len(all_batches))])
                           for j in range(cur_len)])
-        mini_batch = (pwords, pos, chars, langs, signs, positions, batch_num, masks)
+        mini_batch = (pwords, pos, chars, langs_in_batch, signs, positions, batch_num, char_batches, masks)
         return mini_batch
