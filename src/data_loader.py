@@ -182,7 +182,7 @@ class Data:
                 for w_pos in range(cur_len):
                     for sen_position in range(len(batch[lang_id])):
                         if w_pos < len(batch[lang_id][sen_position][0]) and c_pos < len(batch[lang_id][sen_position][0][w_pos]):
-                            ch[offset] = model.chars.get(batch[lang_id][sen_position][0][w_pos][c_pos], 0)
+                            ch[offset] = model.chars[lang_id].get(batch[lang_id][sen_position][0][w_pos][c_pos], 0)
                         offset += 1
                 chars_[c_pos] = np.array(ch)
             chars[lang_id] = np.array(chars_)
