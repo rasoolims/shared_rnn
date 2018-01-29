@@ -9,7 +9,7 @@ def eval(batches):
     dev_perf = 0
     for dev_batch in batches:
         dev_perf += network.eval(dev_batch)
-    dev_perf /= len(data.de2dict_dev)
+    dev_perf /= len(data.dev_alignments)
     return dev_perf
 
 def save(path):
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     parser.add_option("--params", dest="params", help="Parameters file", metavar="FILE", default="params.pickle")
     parser.add_option("--model", dest="model", help="Load/Save model file", metavar="FILE", default="parser.model")
     parser.add_option("--we", type="int", dest="we", default=100)
-    parser.add_option("--batch", type="int", dest="batch", default=5000)
+    parser.add_option("--batch", type="int", dest="batch", default=5)
     parser.add_option("--pe", type="int", dest="pe", default=100)
     parser.add_option("--ce", type="int", dest="ce", default=100)
     parser.add_option("--re", type="int", dest="re", default=25)
@@ -89,38 +89,38 @@ if __name__ == '__main__':
     network = Network(universal_tags, data.chars, options)
     print 'splitting train data'
     print 'starting epochs'
-    dev_batches = data.get_dev_batches(network, data.de2dict_dev)
-    print 'loaded dev+noise batches'
+    #dev_batches = data.get_dev_batches(network, data.de2dict_dev)
+    #print 'loaded dev+noise batches'
 
-    best_performance =  eval(dev_batches)
-    print 'dev sim/random:', best_performance
+    #best_performance =  eval(dev_batches)
+    #print 'dev sim/random:', best_performance
     for e in range(10):
         print 'epochs', (e+1)
         errors = []
         progress = 0
-        train_len = len(data.de2dict)
+        train_len = len(data.alignments)
         start = time.time()
 
 
         for i in range(train_len):
-            minibatch = data.get_next_batch(network, options.num_lang, options.neg_num)
+            minibatch = data.get_next_batch(network, options.batch, options.neg_num)
             errors.append(network.train(minibatch, train_len, options.neg_num))
             progress += 1
             if len(errors) >= 100:
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
                 start = time.time()
                 errors = []
-            if (i+1) % 500 == 0:
-                dev_perform = eval(dev_batches)
-                print 'dev sim:', dev_perform
-                if dev_perform < best_performance:
-                    best_performance = dev_perform
-                    print 'saving', best_performance
-                    save(os.path.join(options.output,"model"))
+            # if (i+1) % 500 == 0:
+                # dev_perform = eval(dev_batches)
+                # print 'dev sim:', dev_perform
+                # if dev_perform < best_performance:
+                #     best_performance = dev_perform
+                #     print 'saving', best_performance
+                #     save(os.path.join(options.output,"model"))
 
-        dev_perform = eval(dev_batches)
-        print 'dev sim:', dev_perform
-        if dev_perform < best_performance:
-            best_performance = dev_perform
-            print 'saving', best_performance
-            save(os.path.join(options.output, "model"))
+        # dev_perform = eval(dev_batches)
+        # print 'dev sim:', dev_perform
+        # if dev_perform < best_performance:
+        #     best_performance = dev_perform
+        #     print 'saving', best_performance
+        #     save(os.path.join(options.output, "model"))
