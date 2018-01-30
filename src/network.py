@@ -149,7 +149,6 @@ class Network:
 
         for b in batch_num:
             for i in range(len(batch_num[b])):
-                if signs[b][i] == 0: continue
                 lang1 = langs[b][i]
                 pos1 = positions[b][i]
                 b1 = batch_num[b][i]
@@ -158,11 +157,11 @@ class Network:
                     lang2 = langs[b][j]
                     pos2 = positions[b][j]
                     b2 = batch_num[b][j]
-                    if lang1 != lang2:
+                    if lang1 != lang2 or signs[b][i] != signs[b][j]:
                         vec2 = t_outs[pos2][b2]
-                        if signs[b][i] == signs[b][j]:  # both one
+                        if signs[b][i] == signs[b][j] == 1:  # both one
                             term = dy.logistic(dy.dot_product(vec1, vec2))
-                        else:
+                        elif signs[b][i]==1 or signs[b][j]==1:
                             term = dy.logistic(-dy.dot_product(vec1, vec2))
                         loss_values.append(term)
 
