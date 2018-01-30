@@ -162,7 +162,7 @@ class Network:
                     b2 = batch_num[b][j]
                     if lang1 != lang2:
                         vec2 = t_outs[pos2][b2]
-                        lu = -dy.squared_distance(vec1, vec2)
+                        lu = -dy.sqrt(dy.squared_distance(vec1, vec2))
                         denom = dy.log(dy.exp(lu) + kq)
                         if signs[b][i] == signs[b][j]:  # both one
                             nom = lu
@@ -181,16 +181,30 @@ class Network:
         return err_value
 
     def eval(self, mini_batch):
-        words, pos_tags, chars, langs, signs, masks = mini_batch
-        h_out = self.rnn_mlp(mini_batch, False)[-1]
-        t_out = dy.transpose(dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1])))
+        pwords, pos_tags, chars, langs, signs, positions, batch_num, char_batches, masks = mini_batch
+        # Getting the last hidden layer from BiLSTM.
+        rnn_out = self.rnn_mlp(mini_batch, False)
+        t_out_ds = [dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1])) for h_out in rnn_out]
+        t_outs = [dy.transpose(t_out_d) for t_out_d in t_out_ds]
+        positive_loss, negative_loss = [], []
+        for b in batch_num:
+            for i in range(len(batch_num[b])):
+                lang1 = langs[b][i]
+                pos1 = positions[b][i]
+                b1 = batch_num[b][i]
+                vec1 = t_outs[pos1][b1]
+                for j in range(i+1, len(batch_num[b])):
+                    lang2 = langs[b][j]
+                    pos2 = positions[b][j]
+                    b2 = batch_num[b][j]
+                    if lang1 != lang2 or signs[b][i] != signs[b][j]:
+                        vec2 = t_outs[pos2][b2]
+                        lu = dy.sqrt(dy.squared_distance(vec1, vec2))
+                        if signs[b][i] == signs[b][j]:  # both one
+                            positive_loss.append(lu)
+                        else:
+                            negative_loss.append(lu)
 
-        sims = []
-        for i in range(len(langs)):
-            for j in range(i+1, len(langs)):
-                sims.append(dy.sqrt(dy.squared_distance(t_out[i], t_out[j])))
-        sim = dy.esum(sims)
-        sim.forward()
-        sim_value = sim.value() / len(sims)
+        pl, nl = dy.esum(positive_loss).value()/len(positive_loss), dy.esum(negative_loss).value()/len(negative_loss)
         dy.renew_cg()
-        return sim_value
+        return pl, nl

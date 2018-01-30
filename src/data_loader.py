@@ -3,6 +3,7 @@ from collections import defaultdict
 import numpy as np
 from utils import *
 
+
 class AlignmentInstance:
     def __init__(self, src_lang, dst_lang, src_sen_id, dst_sen_id, align_line):
         self.src_lang, self.dst_lang = src_lang, dst_lang
@@ -75,60 +76,54 @@ class Data:
         print 'Object data is completely loaded!', len(self.alignments), len(self.dev_alignments)
 
     def get_next_batch(self, model, batch_size=5, neg_num=5):
-        batch = defaultdict(list)
-        c_len = defaultdict(int)
-        w_len = 0
+        batch, c_len, w_len = defaultdict(list), defaultdict(int), 0
         for b in range(batch_size):
-            random_instance = self.alignments[random.randint(0, len(self.alignments)-1)]
-            random_alignment_instance = random_instance.alignment[random.randint(0, len(random_instance.alignment)-1)]
-            src_position, dst_position = random_alignment_instance
-            src_lang, dst_lang = random_instance.src_lang, random_instance.dst_lang
-            src_words, src_tags = self.lang_unique_sentence_list[src_lang][random_instance.src_id]
-            dst_words, dst_tags = self.lang_unique_sentence_list[dst_lang][random_instance.dst_id]
-            w_len = max(w_len, max(len(src_words), len(dst_words)))
-            c_len[src_lang] = max(c_len[src_lang], max([len(w) for w in src_words]))
-            c_len[dst_lang] = max(c_len[dst_lang], max([len(w) for w in dst_words]))
-            batch[src_lang].append((src_words, src_tags, src_lang, 1, src_position, b))
-            batch[dst_lang].append((dst_words, dst_tags, dst_lang, 1, dst_position, b))
-            for r in range(neg_num):
-                src_neg_tag = self.pos_tags[random.randint(0, len(self.pos_tags)-1)]
-                dst_neg_tag = self.pos_tags[random.randint(0, len(self.pos_tags)-1)]
-                src_neg_word = self.neg_examples[src_lang][random.randint(0, len(self.neg_examples[src_lang])-1)]
-                dst_neg_word = self.neg_examples[dst_lang][random.randint(0, len(self.neg_examples[dst_lang])-1)]
-                c_len[src_lang] = max(c_len[src_lang], len(src_neg_word))
-                c_len[dst_lang] = max(c_len[dst_lang], len(dst_neg_word))
-                src_neg_words = src_words[:src_position] + [src_neg_word] + src_words[src_position+1:]
-                dst_neg_words = dst_words[:dst_position] + [dst_neg_word] + dst_words[dst_position+1:]
-                src_neg_tags = src_tags[:src_position] + [src_neg_tag] + src_tags[src_position+1:]
-                dst_neg_tags = dst_tags[:dst_position] + [dst_neg_tag] + dst_tags[dst_position+1:]
-                batch[src_lang].append((src_neg_words, src_neg_tags, src_lang, 0, src_position, b))
-                batch[dst_lang].append((dst_neg_words, dst_neg_tags, dst_lang, 0, dst_position, b))
+            random_instance = self.alignments[random.randint(0, len(self.alignments) - 1)]
+            random_alignment_instance = random_instance.alignment[random.randint(0, len(random_instance.alignment) - 1)]
+            w_len = self.retrieve_batch_elems(b, batch, c_len, neg_num, random_alignment_instance, random_instance, w_len)
         return self.get_minibatch(batch, c_len, w_len, model)
 
-    def get_dev_batches(self, model, dev_dict):
-        dev_batches = list()
-        for de_sen in dev_dict.keys():
-            output = ['de', de_sen]
-            for pr in dev_dict[de_sen]:
-                output.append(pr[0])
-                output.append(pr[1])
-            batch = defaultdict(list)
-            c_len, w_len = defaultdict(int), 0
-            for i in range(0, len(output), 2):
-                lang_id = output[i].strip()
-                words, tags = get_words_tags(output[i + 1])
-                c_len[lang_id] = max(c_len[lang_id], max([len(w) for w in words]))
-                w_len = max(w_len, len(words))
-                batch[lang_id].append((words, tags, lang_id, 1))
-            dev_batches.append(self.get_minibatch(batch, c_len, w_len, model))
-        return dev_batches
+    def get_dev_batches(self, model, batch_size):
+        for i in range(len(self.dev_alignments) / batch_size):
+            batch, c_len, w_len = defaultdict(list), defaultdict(int), 0
+            for b in range(batch_size):
+                instance = self.alignments[batch_size * i + b]
+                alignment_instance = instance.alignment[random.randint(0, len(instance.alignment) - 1)]
+                w_len = self.retrieve_batch_elems(b, batch, c_len, 1, alignment_instance, instance, w_len)
+            yield self.get_minibatch(batch, c_len, w_len, model)
+
+    def retrieve_batch_elems(self, b, batch, c_len, neg_num, random_alignment_instance, random_instance, w_len):
+        src_position, dst_position = random_alignment_instance
+        src_lang, dst_lang = random_instance.src_lang, random_instance.dst_lang
+        src_words, src_tags = self.lang_unique_sentence_list[src_lang][random_instance.src_id]
+        dst_words, dst_tags = self.lang_unique_sentence_list[dst_lang][random_instance.dst_id]
+        w_len = max(w_len, max(len(src_words), len(dst_words)))
+        c_len[src_lang] = max(c_len[src_lang], max([len(w) for w in src_words]))
+        c_len[dst_lang] = max(c_len[dst_lang], max([len(w) for w in dst_words]))
+        batch[src_lang].append((src_words, src_tags, src_lang, 1, src_position, b))
+        batch[dst_lang].append((dst_words, dst_tags, dst_lang, 1, dst_position, b))
+        for r in range(neg_num):
+            src_neg_tag = self.pos_tags[random.randint(0, len(self.pos_tags) - 1)]
+            dst_neg_tag = self.pos_tags[random.randint(0, len(self.pos_tags) - 1)]
+            src_neg_word = self.neg_examples[src_lang][random.randint(0, len(self.neg_examples[src_lang]) - 1)]
+            dst_neg_word = self.neg_examples[dst_lang][random.randint(0, len(self.neg_examples[dst_lang]) - 1)]
+            c_len[src_lang] = max(c_len[src_lang], len(src_neg_word))
+            c_len[dst_lang] = max(c_len[dst_lang], len(dst_neg_word))
+            src_neg_words = src_words[:src_position] + [src_neg_word] + src_words[src_position + 1:]
+            dst_neg_words = dst_words[:dst_position] + [dst_neg_word] + dst_words[dst_position + 1:]
+            src_neg_tags = src_tags[:src_position] + [src_neg_tag] + src_tags[src_position + 1:]
+            dst_neg_tags = dst_tags[:dst_position] + [dst_neg_tag] + dst_tags[dst_position + 1:]
+            batch[src_lang].append((src_neg_words, src_neg_tags, src_lang, 0, src_position, b))
+            batch[dst_lang].append((dst_neg_words, dst_neg_tags, dst_lang, 0, dst_position, b))
+        return w_len
 
     def get_minibatch(self, batch, cur_c_len, cur_len, model):
         all_batches = []
         for lang_id in batch.keys():
             all_batches += batch[lang_id]
         langs = [all_batches[i][2] for i in range(len(all_batches))]
-        batch_num, positions, signs, langs_in_batch = defaultdict(list), defaultdict(list), defaultdict(list), defaultdict(list)
+        batch_num, positions, signs, langs_in_batch = defaultdict(list), defaultdict(list), defaultdict(
+            list), defaultdict(list)
         for i in range(len(all_batches)):
             batch_num[all_batches[i][5]].append(i)
             positions[all_batches[i][5]].append(all_batches[i][4])

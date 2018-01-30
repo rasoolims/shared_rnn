@@ -5,12 +5,16 @@ import pickle, time, os, sys
 from data_loader import Data
 
 
-def eval(batches):
-    dev_perf = 0
-    for dev_batch in batches:
-        dev_perf += network.eval(dev_batch)
-    dev_perf /= len(data.dev_alignments)
-    return dev_perf
+def eval(data, network):
+    pl, nl, c = 0, 0, 0
+    for dev_batch in data.get_dev_batches(network, 1):
+        p, n = network.eval(dev_batch)
+        pl+= p
+        nl+= n
+        c+= 1
+    pl /= c
+    nl /= c
+    return pl, nl
 
 def save(path):
     with open(path, 'w') as paramsfp:
@@ -89,11 +93,9 @@ if __name__ == '__main__':
     network = Network(universal_tags, data.chars, options)
     print 'splitting train data'
     print 'starting epochs'
-    #dev_batches = data.get_dev_batches(network, data.de2dict_dev)
-    #print 'loaded dev+noise batches'
 
-    #best_performance =  eval(dev_batches)
-    #print 'dev sim/random:', best_performance
+    best_performance, nl =  eval(data, network)
+    print 'dev sim/random:', best_performance, nl
     for e in range(10):
         print 'epochs', (e+1)
         errors = []
@@ -110,17 +112,17 @@ if __name__ == '__main__':
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
                 start = time.time()
                 errors = []
-            # if (i+1) % 500 == 0:
-                # dev_perform = eval(dev_batches)
-                # print 'dev sim:', dev_perform
-                # if dev_perform < best_performance:
-                #     best_performance = dev_perform
-                #     print 'saving', best_performance
-                #     save(os.path.join(options.output,"model"))
+            if (i+1) % 100 == 0:
+                dev_perform, nl = eval(data, network)
+                print 'dev sim/random:', dev_perform, nl
+                if dev_perform < best_performance:
+                    best_performance = dev_perform
+                    print 'saving', best_performance
+                    save(os.path.join(options.output,"model"))
 
-        # dev_perform = eval(dev_batches)
-        # print 'dev sim:', dev_perform
-        # if dev_perform < best_performance:
-        #     best_performance = dev_perform
-        #     print 'saving', best_performance
-        #     save(os.path.join(options.output, "model"))
+        dev_perform, nl = eval(data, network)
+        print 'dev sim/random:', dev_perform, nl
+        if dev_perform < best_performance:
+            best_performance = dev_perform
+            print 'saving', best_performance
+            save(os.path.join(options.output, "model"))
