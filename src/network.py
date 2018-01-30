@@ -167,10 +167,11 @@ class Network:
                     if lang1 != lang2:
                         vec2 = t_outs[pos2][b2]
                         if signs[b][i] == signs[b][j] == 1:  # both one
-                            term = dy.logistic(dy.dot_product(vec1, vec2))
+                            term = -dy.log(dy.logistic(dy.dot_product(vec1, vec2)))
+                            loss_values.append(term)
                         elif signs[b][i] == 1 or signs[b][j] == 1:
-                            term = dy.logistic(-dy.dot_product(vec1, vec2))
-                        loss_values.append(term)
+                            term = -dy.log(dy.logistic(-dy.dot_product(vec1, vec2)))
+                            loss_values.append(term)
 
         err_value = 0
         if len(loss_values) > 0:
