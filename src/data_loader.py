@@ -23,7 +23,19 @@ class Data:
         self.lang_unique_sentence_list = defaultdict(list)
         lang_unique_sentence_set = defaultdict(dict)
 
+        lang_sorted = set()
         for flat_dir in os.listdir(bible_folder):
+            l1 = flat_dir[:flat_dir.rfind('_')]
+            l2 = flat_dir[flat_dir.rfind('_') + 1:]
+            lang_sorted.add(l1)
+            lang_sorted.add(l2)
+        lang_sorted = sorted(list(lang_sorted))
+        flat_dirs = []
+        for i in range(len(lang_sorted)-1):
+            flat_dirs.append(lang_sorted[i]+'_'+lang_sorted[i+1])
+        flat_dirs.append(lang_sorted[0] + '_' + lang_sorted[-1])
+
+        for flat_dir in flat_dirs:
             l1 = flat_dir[:flat_dir.rfind('_')]
             l2 = flat_dir[flat_dir.rfind('_') + 1:]
             f = bible_folder + flat_dir + '/'
@@ -51,7 +63,7 @@ class Data:
 
                 src_sen_id, dst_sen_id = lang_unique_sentence_set[l1][src_sen], lang_unique_sentence_set[l2][dst_sen]
                 alignment = AlignmentInstance(l1, l2, src_sen_id, dst_sen_id, intersections[i])
-                if random.randint(0, 9900) != 9900:
+                if random.randint(0, 990) != 990:
                     self.alignments.append(alignment)
                     for word in src_words:
                         lang_word_set[l1].add(word)
