@@ -1,9 +1,11 @@
 import dynet as dy
 import gzip
-import os,sys,math
+import os, sys, math
 from linalg import *
+
 reload(sys)
 sys.setdefaultencoding('utf8')
+
 
 class Network:
     def __init__(self, pos, chars, options):
@@ -28,11 +30,11 @@ class Network:
         input_dim = edim + options.pe if self.options.use_pos else edim
         for f in os.listdir(options.external_embedding):
             lang = f[:-3]
-            efp = gzip.open(options.external_embedding+'/'+f, 'r')
+            efp = gzip.open(options.external_embedding + '/' + f, 'r')
             external_embedding[lang] = {line.split(' ')[0]: [float(f) for f in line.strip().split(' ')[1:]]
                                         for line in efp if len(line.split(' ')) > 2}
             efp.close()
-            self.evocab[lang] = {word: i  + word_index for i, word in enumerate(external_embedding[lang])}
+            self.evocab[lang] = {word: i + word_index for i, word in enumerate(external_embedding[lang])}
             word_index += len(self.evocab[lang])
 
             if len(external_embedding[lang]) > 0:
@@ -53,10 +55,11 @@ class Network:
             for word in external_embedding[lang].keys():
                 self.elookup.init_row(self.evocab[lang][word], external_embedding[lang][word])
 
-        self.lang2id = {lang:i for i,lang in enumerate(self.evocab.keys())}
+        self.lang2id = {lang: i for i, lang in enumerate(self.evocab.keys())}
         self.lang_lookup = self.model.add_lookup_parameters((len(self.lang2id), options.le))
 
-        self.deep_lstms = dy.BiRNNBuilder(options.layer, input_dim +  options.le, options.rnn * 2, self.model, dy.VanillaLSTMBuilder)
+        self.deep_lstms = dy.BiRNNBuilder(options.layer, input_dim + options.le, options.rnn * 2, self.model,
+                                          dy.VanillaLSTMBuilder)
         for i in range(len(self.deep_lstms.builder_layers)):
             builder = self.deep_lstms.builder_layers[i]
             b0 = orthonormal_VanillaLSTMBuilder(builder[0], builder[0].spec[1], builder[0].spec[2])
@@ -102,38 +105,42 @@ class Network:
             inputs = [dy.concatenate([f, b]) for f, b in zip(fs, reversed(bs))]
         return inputs
 
-
     def rnn_mlp(self, batch, train):
         '''
         Here, I assumed all sens have the same length.
         '''
         words, pos_tags, chars, langs, signs, positions, batch_num, char_batches, masks = batch
 
-        all_inputs = [0]*len(chars.keys())
+        all_inputs = [0] * len(chars.keys())
         for l, lang in enumerate(chars.keys()):
             cembed = [dy.lookup_batch(self.clookup[lang], c) for c in chars[lang]]
-            char_fwd  = self.char_lstm[lang].builder_layers[0][0].initial_state().transduce(cembed)[-1]
+            char_fwd = self.char_lstm[lang].builder_layers[0][0].initial_state().transduce(cembed)[-1]
             char_bckd = self.char_lstm[lang].builder_layers[0][1].initial_state().transduce(reversed(cembed))[-1]
             crnns = dy.reshape(dy.concatenate_cols([char_fwd, char_bckd]), (self.options.we, chars[lang].shape[1]))
             cnn_reps = [list() for _ in range(len(words[lang]))]
             for i in range(words[lang].shape[0]):
                 cnn_reps[i] = dy.pick_batch(crnns, char_batches[lang][i], 1)
             wembed = [dy.lookup_batch(self.elookup, words[lang][i]) + cnn_reps[i] for i in range(len(words[lang]))]
-            posembed = [dy.lookup_batch(self.plookup, pos_tags[lang][i]) for i in range(len(pos_tags[lang]))] if self.options.use_pos else None
-            lang_embeds = [dy.lookup_batch(self.lang_lookup, [self.lang2id[lang]]*len(pos_tags[lang][i])) for i in range(len(pos_tags[lang]))]
+            posembed = [dy.lookup_batch(self.plookup, pos_tags[lang][i]) for i in
+                        range(len(pos_tags[lang]))] if self.options.use_pos else None
+            lang_embeds = [dy.lookup_batch(self.lang_lookup, [self.lang2id[lang]] * len(pos_tags[lang][i])) for i in
+                           range(len(pos_tags[lang]))]
 
             if not train:
-                inputs = [dy.concatenate([w, pos]) for w, pos in zip(wembed, posembed)] if self.options.use_pos else wembed
+                inputs = [dy.concatenate([w, pos]) for w, pos in
+                          zip(wembed, posembed)] if self.options.use_pos else wembed
                 inputs = [dy.tanh(self.proj_mat[lang].expr() * inp) for inp in inputs]
             else:
                 emb_masks = self.generate_emb_mask(words[lang].shape[0], words[lang].shape[1])
-                inputs = [dy.concatenate([dy.cmult(w, wm), dy.cmult(pos, posm)]) for w, pos, (wm, posm) in zip(wembed, posembed, emb_masks)] if self.options.use_pos\
+                inputs = [dy.concatenate([dy.cmult(w, wm), dy.cmult(pos, posm)]) for w, pos, (wm, posm) in
+                          zip(wembed, posembed, emb_masks)] if self.options.use_pos \
                     else [dy.cmult(w, wm) for w, wm in zip(wembed, emb_masks)]
                 inputs = [dy.tanh(self.proj_mat[lang].expr() * inp) for inp in inputs]
             inputs = [dy.concatenate([inp, lembed]) for inp, lembed in zip(inputs, lang_embeds)]
             all_inputs[l] = inputs
 
-        lstm_input = [dy.concatenate_to_batch([all_inputs[j][i] for j in range(len(all_inputs))]) for i in range(len(all_inputs[0]))]
+        lstm_input = [dy.concatenate_to_batch([all_inputs[j][i] for j in range(len(all_inputs))]) for i in
+                      range(len(all_inputs[0]))]
         d = self.options.dropout
         return self.bi_rnn(lstm_input, lstm_input[0].dim()[1], d if train else 0, d if train else 0)
 
@@ -153,7 +160,7 @@ class Network:
                 pos1 = positions[b][i]
                 b1 = batch_num[b][i]
                 vec1 = t_outs[pos1][b1]
-                for j in range(i+1, len(batch_num[b])):
+                for j in range(i + 1, len(batch_num[b])):
                     lang2 = langs[b][j]
                     pos2 = positions[b][j]
                     b2 = batch_num[b][j]
@@ -161,12 +168,12 @@ class Network:
                         vec2 = t_outs[pos2][b2]
                         if signs[b][i] == signs[b][j] == 1:  # both one
                             term = dy.logistic(dy.dot_product(vec1, vec2))
-                        elif signs[b][i]==1 or signs[b][j]==1:
+                        elif signs[b][i] == 1 or signs[b][j] == 1:
                             term = dy.logistic(-dy.dot_product(vec1, vec2))
                         loss_values.append(term)
 
         err_value = 0
-        if len(loss_values)>0:
+        if len(loss_values) > 0:
             err = dy.esum(loss_values) / len(loss_values)
             err.forward()
             err_value = err.value()
@@ -188,7 +195,7 @@ class Network:
                 pos1 = positions[b][i]
                 b1 = batch_num[b][i]
                 vec1 = t_outs[pos1][b1]
-                for j in range(i+1, len(batch_num[b])):
+                for j in range(i + 1, len(batch_num[b])):
                     lang2 = langs[b][j]
                     pos2 = positions[b][j]
                     b2 = batch_num[b][j]
@@ -200,6 +207,7 @@ class Network:
                         elif signs[b][i] == 1 or signs[b][j] == 1:
                             negative_loss.append(lu)
 
-        pl, nl = dy.esum(positive_loss).value()/len(positive_loss), dy.esum(negative_loss).value()/len(negative_loss)
+        pl, nl = dy.esum(positive_loss).value() / len(positive_loss), dy.esum(negative_loss).value() / len(
+            negative_loss)
         dy.renew_cg()
         return pl, nl
