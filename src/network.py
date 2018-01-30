@@ -145,8 +145,6 @@ class Network:
         t_outs = [dy.transpose(t_out_d) for t_out_d in t_out_ds]
 
         # Calculating the kq values for NCE.
-        kq = dy.scalarInput(float(k) / num_train)
-        lkq = dy.log(kq)
         loss_values = []
 
         for b in batch_num:
@@ -162,13 +160,11 @@ class Network:
                     b2 = batch_num[b][j]
                     if lang1 != lang2:
                         vec2 = t_outs[pos2][b2]
-                        lu = -dy.sqrt(dy.squared_distance(vec1, vec2))
-                        denom = dy.log(dy.exp(lu) + kq)
                         if signs[b][i] == signs[b][j]:  # both one
-                            nom = lu
+                            term = dy.logistic(dy.dot_product(vec1, vec2))
                         else:
-                            nom = lkq
-                        loss_values.append(denom - nom)
+                            term = dy.logistic(-dy.dot_product(vec1, vec2))
+                        loss_values.append(term)
 
         err_value = 0
         if len(loss_values)>0:
@@ -199,7 +195,7 @@ class Network:
                     b2 = batch_num[b][j]
                     if lang1 != lang2 or signs[b][i] != signs[b][j]:
                         vec2 = t_outs[pos2][b2]
-                        lu = dy.sqrt(dy.squared_distance(vec1, vec2))
+                        lu = dy.dot_product(vec1, vec2)
                         if signs[b][i] == signs[b][j]:  # both one
                             positive_loss.append(lu)
                         else:
