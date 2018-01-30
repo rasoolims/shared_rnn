@@ -7,7 +7,7 @@ from data_loader import Data
 
 def eval(data, network):
     pl, nl, c = 0, 0, 0
-    for dev_batch in data.get_dev_batches(network, 1):
+    for dev_batch in data.get_dev_batches(network, options.batch):
         p, n = network.eval(dev_batch)
         pl+= p
         nl+= n
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     parser.add_option("--params", dest="params", help="Parameters file", metavar="FILE", default="params.pickle")
     parser.add_option("--model", dest="model", help="Load/Save model file", metavar="FILE", default="parser.model")
     parser.add_option("--we", type="int", dest="we", default=100)
-    parser.add_option("--batch", type="int", dest="batch", default=5)
+    parser.add_option("--batch", type="int", dest="batch", default=20)
     parser.add_option("--pe", type="int", dest="pe", default=100)
     parser.add_option("--ce", type="int", dest="ce", default=100)
     parser.add_option("--re", type="int", dest="re", default=25)
@@ -108,7 +108,7 @@ if __name__ == '__main__':
             minibatch = data.get_next_batch(network, options.batch, options.neg_num)
             errors.append(network.train(minibatch, train_len, options.neg_num))
             progress += 1
-            if len(errors) >= 100:
+            if len(errors) >= 100 or progress==1:
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
                 start = time.time()
                 errors = []

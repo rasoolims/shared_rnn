@@ -117,7 +117,7 @@ class Network:
             crnns = dy.reshape(dy.concatenate_cols([char_fwd, char_bckd]), (self.options.we, chars[lang].shape[1]))
             cnn_reps = [list() for _ in range(len(words[lang]))]
             for i in range(words[lang].shape[0]):
-                cnn_reps[i] = dy.pick_batch(crnns, [char_batches[lang][j][i] for j in range(words[lang].shape[1])], 1)
+                cnn_reps[i] = dy.pick_batch(crnns, char_batches[lang][i], 1)
             wembed = [dy.lookup_batch(self.elookup, words[lang][i]) + cnn_reps[i] for i in range(len(words[lang]))]
             posembed = [dy.lookup_batch(self.plookup, pos_tags[lang][i]) for i in range(len(pos_tags[lang]))] if self.options.use_pos else None
             lang_embeds = [dy.lookup_batch(self.lang_lookup, [self.lang2id[lang]]*len(pos_tags[lang][i])) for i in range(len(pos_tags[lang]))]
@@ -157,7 +157,7 @@ class Network:
                     lang2 = langs[b][j]
                     pos2 = positions[b][j]
                     b2 = batch_num[b][j]
-                    if lang1 != lang2 or signs[b][i] != signs[b][j]:
+                    if lang1 != lang2:
                         vec2 = t_outs[pos2][b2]
                         if signs[b][i] == signs[b][j] == 1:  # both one
                             term = dy.logistic(dy.dot_product(vec1, vec2))
@@ -192,12 +192,12 @@ class Network:
                     lang2 = langs[b][j]
                     pos2 = positions[b][j]
                     b2 = batch_num[b][j]
-                    if lang1 != lang2 or signs[b][i] != signs[b][j]:
+                    if lang1 != lang2:
                         vec2 = t_outs[pos2][b2]
                         lu = dy.dot_product(vec1, vec2)
-                        if signs[b][i] == signs[b][j]:  # both one
+                        if signs[b][i] == signs[b][j] == 1:  # both one
                             positive_loss.append(lu)
-                        else:
+                        elif signs[b][i] == 1 or signs[b][j] == 1:
                             negative_loss.append(lu)
 
         pl, nl = dy.esum(positive_loss).value()/len(positive_loss), dy.esum(negative_loss).value()/len(negative_loss)

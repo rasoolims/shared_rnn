@@ -51,7 +51,7 @@ class Data:
 
                 src_sen_id, dst_sen_id = lang_unique_sentence_set[l1][src_sen], lang_unique_sentence_set[l2][dst_sen]
                 alignment = AlignmentInstance(l1, l2, src_sen_id, dst_sen_id, intersections[i])
-                if random.randint(0, 99) != 99:
+                if random.randint(0, 9900) != 9900:
                     self.alignments.append(alignment)
                     for word in src_words:
                         lang_word_set[l1].add(word)
@@ -136,9 +136,9 @@ class Data:
             char_batches[lang_id] = dict()
             uniq_words[lang_id] = list()
             lang_words = dict()
-            for sen_position in range(len(batch[lang_id])):
-                char_batches[lang_id][sen_position] = dict()
-                for w_pos in range(cur_len):
+            for w_pos in range(cur_len):
+                char_batches[lang_id][w_pos] = [-1] * len(batch[lang_id])
+                for sen_position in range(len(batch[lang_id])):
                     if w_pos < len(batch[lang_id][sen_position][0]):
                         w = batch[lang_id][sen_position][0][w_pos]
                     else:
@@ -146,7 +146,7 @@ class Data:
                     if not w in lang_words:
                         lang_words[w] = len(uniq_words[lang_id])
                         uniq_words[lang_id].append(w)
-                    char_batches[lang_id][sen_position][w_pos] = lang_words[w]
+                    char_batches[lang_id][w_pos][sen_position] = lang_words[w]
 
         for lang_id in batch.keys():
             chars_ = [list() for _ in range(cur_c_len[lang_id])]
@@ -161,8 +161,7 @@ class Data:
             chars[lang_id] = np.array(chars_)
             pwords[lang_id] = np.array([np.array(
                 [model.evocab[langs[i]].get(batch[lang_id][i][0][j], 0) if j < len(batch[lang_id][i][0]) else model.PAD
-                 for i in
-                 range(len(batch[lang_id]))]) for j in range(cur_len)])
+                 for i in range(len(batch[lang_id]))]) for j in range(cur_len)])
             pos[lang_id] = np.array([np.array(
                 [model.pos.get(batch[lang_id][i][1][j], 0) if j < len(batch[lang_id][i][1]) else model.PAD for i in
                  range(len(batch[lang_id]))]) for j in range(cur_len)])
