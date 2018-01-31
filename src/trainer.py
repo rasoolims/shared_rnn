@@ -96,8 +96,9 @@ if __name__ == '__main__':
     print 'splitting train data'
     print 'starting epochs'
 
-    best_performance, nl, lm_loss =  eval(data, network)
-    print 'dev sim/random:', best_performance, nl, lm_loss
+    best_performance = float('inf')
+    dev_perform, nl, lm_loss =  eval(data, network)
+    print 'dev sim/random:', dev_perform, nl, lm_loss
     for e in range(10):
         print 'epochs', (e+1)
         errors = []
