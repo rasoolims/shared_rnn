@@ -15,6 +15,7 @@ def eval(data, network):
         c+= 1
     pl /= c
     nl /= c
+    lm_ /= c
     return pl, nl, lm_
 
 def save(path):
