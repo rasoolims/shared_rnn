@@ -67,6 +67,7 @@ class Network:
             self.deep_lstms.builder_layers[i] = (b0, b1)
 
         self.lm_w = self.model.add_parameters((2, options.rnn * 2))
+        self.lm_b = self.model.add_parameters((2,), init=dy.ConstInitializer(-math.log(2)))
         def _emb_mask_generator(seq_len, batch_size):
             ret = []
             for _ in xrange(seq_len):
@@ -162,7 +163,7 @@ class Network:
                 b1 = batch_num[b][i]
                 vec1 = t_outs[pos1][b1]
 
-                lm_out = self.lm_w.expr() * vec1
+                lm_out = dy.affine_transform([self.lm_b.expr(), self.lm_w.expr(), vec1])
                 loss_values.append(dy.pickneglogsoftmax(lm_out, signs[b][i]))
                 '''
                 for j in range(i + 1, len(batch_num[b])):
@@ -202,7 +203,7 @@ class Network:
                 pos1 = positions[b][i]
                 b1 = batch_num[b][i]
                 vec1 = t_outs[pos1][b1]
-                lm_out = self.lm_w.expr() * vec1
+                lm_out =dy.affine_transform([self.lm_b.expr(), self.lm_w.expr(), vec1])
                 lm_loss.append(dy.pickneglogsoftmax(lm_out, signs[b][i]))
                 for j in range(i + 1, len(batch_num[b])):
                     lang2 = langs[b][j]
