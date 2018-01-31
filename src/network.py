@@ -164,6 +164,7 @@ class Network:
 
                 lm_out = self.lm_w.expr() * vec1
                 loss_values.append(dy.pickneglogsoftmax(lm_out, signs[b][i]))
+                '''
                 for j in range(i + 1, len(batch_num[b])):
                     lang2 = langs[b][j]
                     pos2 = positions[b][j]
@@ -177,7 +178,7 @@ class Network:
                         elif signs[b][i] == 1 or signs[b][j] == 1:
                             term = -dy.log(dy.logistic(-dot_product))
                             loss_values.append(term)
-
+                '''
         err_value = 0
         if len(loss_values) > 0:
             err = dy.esum(loss_values) / len(loss_values)
