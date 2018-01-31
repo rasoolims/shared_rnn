@@ -66,6 +66,7 @@ class Network:
             b1 = orthonormal_VanillaLSTMBuilder(builder[1], builder[1].spec[1], builder[1].spec[2])
             self.deep_lstms.builder_layers[i] = (b0, b1)
 
+        self.lm_w = self.model.add_parameters((2, options.rnn * 2))
         def _emb_mask_generator(seq_len, batch_size):
             ret = []
             for _ in xrange(seq_len):
@@ -160,17 +161,21 @@ class Network:
                 pos1 = positions[b][i]
                 b1 = batch_num[b][i]
                 vec1 = t_outs[pos1][b1]
+
+                lm_out = self.lm_w.expr() * vec1
+                loss_values.append(dy.pickneglogsoftmax(lm_out, signs[b][i]))
                 for j in range(i + 1, len(batch_num[b])):
                     lang2 = langs[b][j]
                     pos2 = positions[b][j]
                     b2 = batch_num[b][j]
                     if lang1 != lang2:
                         vec2 = t_outs[pos2][b2]
+                        dot_product = dy.dot_product(vec1, vec2)
                         if signs[b][i] == signs[b][j] == 1:  # both one
-                            term = -dy.log(dy.logistic(dy.dot_product(vec1, vec2)))
+                            term = -dy.log(dy.logistic(dot_product))
                             loss_values.append(term)
                         elif signs[b][i] == 1 or signs[b][j] == 1:
-                            term = -dy.log(dy.logistic(-dy.dot_product(vec1, vec2)))
+                            term = -dy.log(dy.logistic(-dot_product))
                             loss_values.append(term)
 
         err_value = 0
@@ -189,13 +194,15 @@ class Network:
         rnn_out = self.rnn_mlp(mini_batch, False)
         t_out_ds = [dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1])) for h_out in rnn_out]
         t_outs = [dy.transpose(t_out_d) for t_out_d in t_out_ds]
-        positive_loss, negative_loss = [], []
+        positive_loss, negative_loss, lm_loss = [], [], []
         for b in batch_num:
             for i in range(len(batch_num[b])):
                 lang1 = langs[b][i]
                 pos1 = positions[b][i]
                 b1 = batch_num[b][i]
                 vec1 = t_outs[pos1][b1]
+                lm_out = self.lm_w.expr() * vec1
+                lm_loss.append(dy.pickneglogsoftmax(lm_out, signs[b][i]))
                 for j in range(i + 1, len(batch_num[b])):
                     lang2 = langs[b][j]
                     pos2 = positions[b][j]
@@ -208,7 +215,7 @@ class Network:
                         elif signs[b][i] == 1 or signs[b][j] == 1:
                             negative_loss.append(lu)
 
-        pl, nl = dy.esum(positive_loss).value() / len(positive_loss), dy.esum(negative_loss).value() / len(
-            negative_loss)
+        pl, nl, lm = dy.esum(positive_loss).value() / len(positive_loss), dy.esum(negative_loss).value() / len(
+            negative_loss), dy.esum(lm_loss).value()/len(lm_loss)
         dy.renew_cg()
-        return pl, nl
+        return pl, nl, lm

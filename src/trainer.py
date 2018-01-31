@@ -6,15 +6,16 @@ from data_loader import Data
 
 
 def eval(data, network):
-    pl, nl, c = 0, 0, 0
+    pl, nl, lm_, c = 0, 0, 0, 0
     for dev_batch in data.get_dev_batches(network, options.batch):
-        p, n = network.eval(dev_batch)
+        p, n, lm = network.eval(dev_batch)
         pl+= p
         nl+= n
+        lm_ += lm
         c+= 1
     pl /= c
     nl /= c
-    return pl, nl
+    return pl, nl, lm_
 
 def save(path):
     with open(path, 'w') as paramsfp:
@@ -94,8 +95,8 @@ if __name__ == '__main__':
     print 'splitting train data'
     print 'starting epochs'
 
-    best_performance, nl =  eval(data, network)
-    print 'dev sim/random:', best_performance, nl
+    best_performance, nl, lm_loss =  eval(data, network)
+    print 'dev sim/random:', best_performance, nl, lm_loss
     for e in range(10):
         print 'epochs', (e+1)
         errors = []
@@ -113,15 +114,15 @@ if __name__ == '__main__':
                 start = time.time()
                 errors = []
             if (i+1) % 1000 == 0:
-                dev_perform, nl = eval(data, network)
-                print 'dev sim/random:', dev_perform, nl
+                dev_perform, nl, lm_loss = eval(data, network)
+                print 'dev sim/random:', dev_perform, nl, lm_loss
                 if dev_perform < best_performance:
                     best_performance = dev_perform
                     print 'saving', best_performance
                     save(os.path.join(options.output,"model"))
 
-        dev_perform, nl = eval(data, network)
-        print 'dev sim/random:', dev_perform, nl
+        dev_perform, nl, lm_loss = eval(data, network)
+        print 'dev sim/random:', dev_perform, nl, lm_loss
         if dev_perform < best_performance:
             best_performance = dev_perform
             print 'saving', best_performance
