@@ -165,21 +165,19 @@ class Network:
 
                 lm_out = dy.affine_transform([self.lm_b.expr(), self.lm_w.expr(), vec1])
                 loss_values.append(dy.pickneglogsoftmax(lm_out, signs[b][i]))
-                '''
                 for j in range(i + 1, len(batch_num[b])):
                     lang2 = langs[b][j]
                     pos2 = positions[b][j]
                     b2 = batch_num[b][j]
                     if lang1 != lang2:
                         vec2 = t_outs[pos2][b2]
-                        dot_product = dy.dot_product(vec1, vec2)
+                        distance = -dy.sqrt(dy.squared_distance(vec1, vec2))
                         if signs[b][i] == signs[b][j] == 1:  # both one
-                            term = -dy.log(dy.logistic(dot_product))
+                            term = -dy.log(dy.logistic(distance))
                             loss_values.append(term)
                         elif signs[b][i] == 1 or signs[b][j] == 1:
-                            term = -dy.log(dy.logistic(-dot_product))
+                            term = -dy.log(dy.logistic(-distance))
                             loss_values.append(term)
-                '''
         err_value = 0
         if len(loss_values) > 0:
             err = dy.esum(loss_values) / len(loss_values)
@@ -211,11 +209,11 @@ class Network:
                     b2 = batch_num[b][j]
                     if lang1 != lang2:
                         vec2 = t_outs[pos2][b2]
-                        lu = dy.dot_product(vec1, vec2)
+                        distance = dy.sqrt(dy.squared_distance(vec1, vec2))
                         if signs[b][i] == signs[b][j] == 1:  # both one
-                            positive_loss.append(lu)
+                            positive_loss.append(distance)
                         elif signs[b][i] == 1 or signs[b][j] == 1:
-                            negative_loss.append(lu)
+                            negative_loss.append(distance)
 
         pl, nl, lm = dy.esum(positive_loss).value() / len(positive_loss), dy.esum(negative_loss).value() / len(
             negative_loss), dy.esum(lm_loss).value()/len(lm_loss)
