@@ -1,6 +1,5 @@
 import dynet as dy
-import gzip
-import os, sys, math
+import os, sys, math, random, gzip
 from linalg import *
 
 reload(sys)
@@ -152,7 +151,7 @@ class Network:
         rnn_out = self.rnn_mlp(mini_batch, True)
         t_out_ds = [dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1])) for h_out in rnn_out]
         t_outs = [dy.transpose(t_out_d) for t_out_d in t_out_ds]
-
+        last_pos = len(rnn_out) - 1
         # Calculating the kq values for NCE.
         loss_values = []
 
@@ -175,6 +174,20 @@ class Network:
                         if signs[b][i] == signs[b][j] == 1:  # both one
                             term = -dy.log(dy.logistic(distance))
                             loss_values.append(term)
+
+                            # alignment-based negative position.
+                            s_neg_position , t_neg_position = random.randint(0, last_pos), random.randint(0, last_pos)
+                            if s_neg_position != pos1:
+                                s_vec = t_outs[s_neg_position][b1]
+                                d_s = -dy.sqrt(dy.squared_distance(s_vec, vec2))
+                                term = -dy.log(dy.logistic(-d_s))
+                                loss_values.append(term)
+                            if t_neg_position != pos2:
+                                t_vec = t_outs[t_neg_position][b2]
+                                d_t = -dy.sqrt(dy.squared_distance(vec1, t_vec))
+                                term = -dy.log(dy.logistic(-d_t))
+                                loss_values.append(term)
+
                         elif signs[b][i] == 1 or signs[b][j] == 1:
                             term = -dy.log(dy.logistic(-distance))
                             loss_values.append(term)
@@ -195,6 +208,8 @@ class Network:
         t_out_ds = [dy.reshape(h_out, (h_out.dim()[0][0], h_out.dim()[1])) for h_out in rnn_out]
         t_outs = [dy.transpose(t_out_d) for t_out_d in t_out_ds]
         positive_loss, negative_loss, lm_loss = [], [], []
+        last_pos = len(rnn_out) - 1
+
         for b in batch_num:
             for i in range(len(batch_num[b])):
                 lang1 = langs[b][i]
@@ -212,9 +227,17 @@ class Network:
                         distance = dy.sqrt(dy.squared_distance(vec1, vec2))
                         if signs[b][i] == signs[b][j] == 1:  # both one
                             positive_loss.append(distance)
+                            s_neg_position, t_neg_position = random.randint(0, last_pos), random.randint(0, last_pos)
+                            if s_neg_position != pos1:
+                                s_vec = t_outs[s_neg_position][b1]
+                                d_s = dy.sqrt(dy.squared_distance(s_vec, vec2))
+                                negative_loss.append(d_s)
+                            if t_neg_position != pos2:
+                                t_vec = t_outs[t_neg_position][b2]
+                                d_t = dy.sqrt(dy.squared_distance(vec1, t_vec))
+                                negative_loss.append(d_t)
                         elif signs[b][i] == 1 or signs[b][j] == 1:
                             negative_loss.append(distance)
-
         pl, nl, lm = dy.esum(positive_loss).value() / len(positive_loss), dy.esum(negative_loss).value() / len(
             negative_loss), dy.esum(lm_loss).value()/len(lm_loss)
         dy.renew_cg()
