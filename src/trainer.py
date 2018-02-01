@@ -109,7 +109,7 @@ if __name__ == '__main__':
 
         for i in range(train_len):
             minibatch = data.get_next_batch(network, options.batch, options.neg_num)
-            errors.append(network.train(minibatch, train_len, options.neg_num))
+            errors.append(network.train(minibatch))
             progress += 1
             if len(errors) >= 100 or progress==1:
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
