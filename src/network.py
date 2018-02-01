@@ -145,7 +145,7 @@ class Network:
         d = self.options.dropout
         return self.bi_rnn(lstm_input, lstm_input[0].dim()[1], d if train else 0, d if train else 0)
 
-    def train(self, mini_batch):
+    def train(self, mini_batch, train_both=True):
         pwords, pos_tags, chars, langs, signs, positions, batch_num, char_batches, masks = mini_batch
         # Getting the last hidden layer from BiLSTM.
         rnn_out = self.rnn_mlp(mini_batch, True)
@@ -164,33 +164,34 @@ class Network:
 
                 lm_out = dy.affine_transform([self.lm_b.expr(), self.lm_w.expr(), vec1])
                 loss_values.append(dy.pickneglogsoftmax(lm_out, signs[b][i]))
-                for j in range(i + 1, len(batch_num[b])):
-                    lang2 = langs[b][j]
-                    pos2 = positions[b][j]
-                    b2 = batch_num[b][j]
-                    if lang1 != lang2:
-                        vec2 = t_outs[pos2][b2]
-                        distance = -dy.sqrt(dy.squared_distance(vec1, vec2))
-                        if signs[b][i] == signs[b][j] == 1:  # both one
-                            term = -dy.log(dy.logistic(distance))
-                            loss_values.append(term)
-
-                            # alignment-based negative position.
-                            s_neg_position , t_neg_position = random.randint(0, last_pos), random.randint(0, last_pos)
-                            if s_neg_position != pos1:
-                                s_vec = t_outs[s_neg_position][b1]
-                                d_s = -dy.sqrt(dy.squared_distance(s_vec, vec2))
-                                term = -dy.log(dy.logistic(-d_s))
-                                loss_values.append(term)
-                            if t_neg_position != pos2:
-                                t_vec = t_outs[t_neg_position][b2]
-                                d_t = -dy.sqrt(dy.squared_distance(vec1, t_vec))
-                                term = -dy.log(dy.logistic(-d_t))
+                if train_both:
+                    for j in range(i + 1, len(batch_num[b])):
+                        lang2 = langs[b][j]
+                        pos2 = positions[b][j]
+                        b2 = batch_num[b][j]
+                        if lang1 != lang2:
+                            vec2 = t_outs[pos2][b2]
+                            distance = -dy.sqrt(dy.squared_distance(vec1, vec2))
+                            if signs[b][i] == signs[b][j] == 1:  # both one
+                                term = -dy.log(dy.logistic(distance))
                                 loss_values.append(term)
 
-                        elif signs[b][i] == 1 or signs[b][j] == 1:
-                            term = -dy.log(dy.logistic(-distance))
-                            loss_values.append(term)
+                                # alignment-based negative position.
+                                s_neg_position , t_neg_position = random.randint(0, last_pos), random.randint(0, last_pos)
+                                if s_neg_position != pos1:
+                                    s_vec = t_outs[s_neg_position][b1]
+                                    d_s = -dy.sqrt(dy.squared_distance(s_vec, vec2))
+                                    term = -dy.log(dy.logistic(-d_s))
+                                    loss_values.append(term)
+                                if t_neg_position != pos2:
+                                    t_vec = t_outs[t_neg_position][b2]
+                                    d_t = -dy.sqrt(dy.squared_distance(vec1, t_vec))
+                                    term = -dy.log(dy.logistic(-d_t))
+                                    loss_values.append(term)
+
+                            elif signs[b][i] == 1 or signs[b][j] == 1:
+                                term = -dy.log(dy.logistic(-distance))
+                                loss_values.append(term)
         err_value = 0
         if len(loss_values) > 0:
             err = dy.esum(loss_values) / len(loss_values)

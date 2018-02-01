@@ -70,6 +70,7 @@ if __name__ == '__main__':
     parser.add_option("--t", type="int", dest="t", default=50000)
     parser.add_option("--lr", type="float", dest="lr", default=0.001)
     parser.add_option("--num_lang", type="int", dest="num_lang", help="number of languages per training instance", default=4)
+    parser.add_option("--lm_iter", type="int", dest="lm_iter", help="number of pretraining iterations for LM", default=200)
     parser.add_option("--neg_num", type="int", dest="neg_num", help="number of negative example per language", default=5)
     parser.add_option("--beta1", type="float", dest="beta1", default=0.9)
     parser.add_option("--beta2", type="float", dest="beta2", default=0.999)
@@ -109,7 +110,7 @@ if __name__ == '__main__':
 
         for i in range(train_len):
             minibatch = data.get_next_batch(network, options.batch, options.neg_num)
-            errors.append(network.train(minibatch))
+            errors.append(network.train(minibatch, i > options.lm_iter))
             progress += 1
             if len(errors) >= 100 or progress==1:
                 print 'time',float(time.time()-start),'progress', round(float(100*progress)/train_len, 2), '%, loss', sum(errors)/len(errors)
