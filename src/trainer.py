@@ -6,17 +6,15 @@ from data_loader import Data
 
 
 def eval(data, network):
-    pl, nl, lm_, c = 0, 0, 0, 0
+    pl, nl, c = 0, 0, 0
     for dev_batch in data.get_dev_batches(network, options.batch):
-        p, n, lm = network.eval(dev_batch)
+        p, n = network.eval(dev_batch)
         pl+= p
         nl+= n
-        lm_ += lm
         c+= 1
     pl /= c
     nl /= c
-    lm_ /= c
-    return pl, nl, lm_
+    return pl, nl
 
 def save(path):
     with open(path, 'w') as paramsfp:
@@ -62,7 +60,7 @@ if __name__ == '__main__':
     parser.add_option("--params", dest="params", help="Parameters file", metavar="FILE", default="params.pickle")
     parser.add_option("--model", dest="model", help="Load/Save model file", metavar="FILE", default="parser.model")
     parser.add_option("--we", type="int", dest="we", default=100)
-    parser.add_option("--batch", type="int", dest="batch", default=20)
+    parser.add_option("--batch", type="int", dest="batch", default=50)
     parser.add_option("--pe", type="int", dest="pe", default=100)
     parser.add_option("--ce", type="int", dest="ce", default=100)
     parser.add_option("--re", type="int", dest="re", default=25)
@@ -98,8 +96,8 @@ if __name__ == '__main__':
     print 'starting epochs'
 
     best_performance = float('inf')
-    dev_perform, nl, lm_loss =  eval(data, network)
-    print 'dev sim/random:', dev_perform, nl, lm_loss
+    dev_perform, nl =  eval(data, network)
+    print 'dev sim/random:', dev_perform, nl
     t = 0
     for e in range(10):
         print 'epochs', (e+1)
@@ -110,7 +108,7 @@ if __name__ == '__main__':
 
         for i in range(train_len):
             minibatch = data.get_next_batch(network, options.batch, options.neg_num)
-            errors.append(network.train(minibatch, i > options.lm_iter))
+            errors.append(network.train(minibatch))
             t += 1
             decay_steps = min(1.0, float(t) / 50000)
             lr = network.options.lr * 0.75 ** decay_steps
@@ -122,15 +120,15 @@ if __name__ == '__main__':
                 start = time.time()
                 errors = []
             if (i+1) % 1000 == 0:
-                dev_perform, nl, lm_loss = eval(data, network)
-                print 'dev sim/random:', dev_perform, nl, lm_loss
+                dev_perform, nl = eval(data, network)
+                print 'dev sim/random:', dev_perform, nl
                 if dev_perform < best_performance:
                     best_performance = dev_perform
                     print 'saving', best_performance
                     save(os.path.join(options.output,"model"))
 
-        dev_perform, nl, lm_loss = eval(data, network)
-        print 'dev sim/random:', dev_perform, nl, lm_loss
+        dev_perform, nl = eval(data, network)
+        print 'dev sim/random:', dev_perform, nl
         if dev_perform < best_performance:
             best_performance = dev_perform
             print 'saving', best_performance
