@@ -306,21 +306,17 @@ class Network:
                         HLVec2 = HL_i[pos2][b2]
                         MLVec2 = ML_i[pos2][b2]
 
-                        ps_loss = -dy.sqrt(dy.squared_distance(HVec1, HVec2))
-                        term = -dy.log(dy.logistic(ps_loss))
-                        positive_loss.append(term)
+                        ps_loss = dy.sqrt(dy.squared_distance(HVec1, HVec2))
+                        positive_loss.append(ps_loss)
 
-                        ps_loss = -dy.sqrt(dy.squared_distance(MVec1, MVec2))
-                        term = -dy.log(dy.logistic(ps_loss))
-                        positive_loss.append(term)
+                        ps_loss = dy.sqrt(dy.squared_distance(MVec1, MVec2))
+                        positive_loss.append(ps_loss)
 
-                        ps_loss = -dy.sqrt(dy.squared_distance(HLVec1, HLVec2))
-                        term = -dy.log(dy.logistic(ps_loss))
-                        positive_loss.append(term)
+                        ps_loss = dy.sqrt(dy.squared_distance(HLVec1, HLVec2))
+                        positive_loss.append(ps_loss)
 
-                        ps_loss = -dy.sqrt(dy.squared_distance(MLVec1, MLVec2))
-                        term = -dy.log(dy.logistic(ps_loss))
-                        positive_loss.append(term)
+                        ps_loss = dy.sqrt(dy.squared_distance(MLVec1, MLVec2))
+                        positive_loss.append(ps_loss)
 
                         s_neg_position, t_neg_position = random.randint(0, last_pos), random.randint(0, last_pos)
                         if s_neg_position != pos1:
