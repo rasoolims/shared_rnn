@@ -70,6 +70,8 @@ if __name__ == '__main__':
     parser.add_option("--num_lang", type="int", dest="num_lang", help="number of languages per training instance", default=4)
     parser.add_option("--lm_iter", type="int", dest="lm_iter", help="number of pretraining iterations for LM", default=200)
     parser.add_option("--neg_num", type="int", dest="neg_num", help="number of negative example per language", default=5)
+    parser.add_option("--arc_mlp", type="int", dest="arc_mlp", default=400)
+    parser.add_option("--label_mlp", type="int", dest="label_mlp", default=100)
     parser.add_option("--beta1", type="float", dest="beta1", default=0.9)
     parser.add_option("--beta2", type="float", dest="beta2", default=0.9)
     parser.add_option("--dropout", type="float", dest="dropout", default=0.33)
